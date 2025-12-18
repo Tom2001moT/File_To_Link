@@ -1,3 +1,4 @@
+
 import os
 import asyncio
 import logging
@@ -13,11 +14,16 @@ logger = logging.getLogger("bot")
 API_ID = int(os.environ.get("API_ID", 0)) 
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "0"))
+LOG_CHANNEL_RAW = os.environ.get("LOG_CHANNEL", "0")
 PORT = int(os.environ.get("PORT", 8080))
 
+# Sanitize Channel ID
+try:
+    LOG_CHANNEL = int(LOG_CHANNEL_RAW)
+except ValueError:
+    LOG_CHANNEL = 0 # Invalid ID
+
 # --- PYROGRAM CLIENT ---
-# We use this for heavy lifting (copying/streaming)
 app = Client(
     "file_to_link_bot",
     api_id=API_ID,
@@ -31,7 +37,6 @@ app = Client(
 async def handle_stream(request):
     try:
         message_id = int(request.match_info['id'])
-        # Fetch message using Pyrogram
         msg = await app.get_messages(LOG_CHANNEL, message_id)
         
         if not msg or not msg.media:
@@ -39,17 +44,14 @@ async def handle_stream(request):
         
         media = getattr(msg, msg.media.value)
         filename = getattr(media, "file_name", "unknown_file") or "file"
-        file_size = getattr(media, "file_size", 0)
-        mime_type = getattr(media, "mime_type", "application/octet-stream")
         
         response = web.StreamResponse(status=200, headers={
-            'Content-Type': mime_type,
+            'Content-Type': getattr(media, "mime_type", "application/octet-stream"),
             'Content-Disposition': f'attachment; filename="{filename}"',
-            'Content-Length': str(file_size)
+            'Content-Length': str(media.file_size)
         })
         await response.prepare(request)
         
-        # Stream using Pyrogram
         async for chunk in app.stream_media(msg):
             await response.write(chunk)
             
@@ -60,7 +62,7 @@ async def handle_stream(request):
 async def health_check(request):
     return web.Response(text="Bot is running")
 
-# --- MANUAL HTTP POLLING (The Fix) ---
+# --- MANUAL HTTP POLLING ---
 async def start_polling():
     print("--- 🚀 Starting Hybrid HTTP Poller ---")
     offset = 0
@@ -69,46 +71,38 @@ async def start_polling():
     async with aiohttp.ClientSession() as session:
         while True:
             try:
-                # 1. Fetch Updates via HTTP (Bypasses Pyrogram's listener)
                 async with session.get(url, params={"offset": offset, "timeout": 10}) as resp:
                     data = await resp.json()
                     
                 if not data.get("ok"):
-                    print(f"Polling Error: {data}")
                     await asyncio.sleep(5)
                     continue
                 
                 updates = data.get("result", [])
-                
                 for update in updates:
                     offset = update["update_id"] + 1
+                    if "message" not in update: continue
                     
-                    if "message" not in update:
-                        continue
-                        
                     message = update["message"]
                     chat_id = message["chat"]["id"]
                     text = message.get("text", "")
                     
                     print(f"DEBUG: Fetched message from {chat_id}")
 
-                    # 2. Handle /start
+                    # Handle /start
                     if text.startswith("/start"):
                         await app.send_message(chat_id, "👋 **Bot is Online!**\nSend me a file.")
                         continue
                     
-                    # 3. Handle Media
-                    # Check if message has media keys
+                    # Handle Media
                     if not any(key in message for key in ["document", "video", "audio", "photo"]):
                         await app.send_message(chat_id, "❌ Please send a file, video, or photo.")
                         continue
 
-                    # 4. Process Logic (Using Pyrogram for actions)
+                    # Process File
                     status_msg = await app.send_message(chat_id, "🔄 **Processing...**")
-                    
                     try:
-                        # Copy from User -> Log Channel
-                        # We use the message_id from the HTTP update
+                        # Copy to Log Channel
                         log_msg = await app.copy_message(
                             chat_id=LOG_CHANNEL,
                             from_chat_id=chat_id,
@@ -130,7 +124,12 @@ async def start_polling():
                         )
                     except Exception as e:
                         print(f"Processing Error: {e}")
-                        await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: {e}")
+                        # If Peer ID Invalid, inform user
+                        err_msg = str(e)
+                        if "PEER_ID_INVALID" in err_msg.upper():
+                             await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: Bot cannot access Log Channel ({LOG_CHANNEL}). Ensure Bot is ADMIN and ID is correct.")
+                        else:
+                             await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: {e}")
 
             except Exception as e:
                 print(f"Polling Exception: {e}")
@@ -141,6 +140,16 @@ async def start_services():
     print("--- Starting Pyrogram Client ---")
     await app.start()
     print("--- Pyrogram Started ---")
+    
+    # --- CRITICAL FIX: Force-Resolve Channel ---
+    # This step ensures the bot "knows" the channel before trying to copy to it
+    try:
+        print(f"--- Resolving Log Channel: {LOG_CHANNEL} ---")
+        chat = await app.get_chat(LOG_CHANNEL)
+        print(f"--- Success! Found Channel: {chat.title} (ID: {chat.id}) ---")
+    except Exception as e:
+        print(f"--- WARNING: Could not resolve Log Channel: {e} ---")
+        print("--- Make sure the Bot is an ADMIN in the channel! ---")
 
     print("--- Starting Web Server ---")
     server = web.Application()
@@ -152,7 +161,6 @@ async def start_services():
     await site.start()
     print(f"--- Web Server running on port {PORT} ---")
 
-    # Start the hybrid polling loop
     await start_polling()
 
 if __name__ == "__main__":
