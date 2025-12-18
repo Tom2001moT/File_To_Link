@@ -111,6 +111,27 @@ async def start_services():
     # Print info to confirm login
     me = await app.get_me()
     print(f"--- Bot Logged In as @{me.username} ---")
+    print("--- Bot Started. Starting Web Server ---")
+
+    server = web.Application()
+    server.router.add_get('/', health_check)
+    server.router.add_get('/dl/{id}', handle_stream)
+
+    runner = web.AppRunner(server)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', PORT)
+    await site.start()
+    
+    print(f"--- Web Server running on port {PORT} ---")
+    await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(start_services())
+    except KeyboardInterrupt:
+        pass    # Print info to confirm login
+    me = await app.get_me()
+    print(f"--- Bot Logged In as @{me.username} ---")
 
     server = web.Application()
     server.router.add_get('/', health_check)
