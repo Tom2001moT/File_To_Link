@@ -20,6 +20,12 @@ app = Client(
     in_memory=True
 )
 
+# --- DEBUG LOGGER ---
+# This handler runs for EVERY message to check if the bot is hearing anything.
+@app.on_message(group=-1)
+async def debug_logger(client, message):
+    print(f"DEBUG: Received message from {message.chat.id}: {message.text or 'Media File'}")
+
 # --- TELEGRAM BOT LOGIC ---
 
 @app.on_message(filters.command("start"))
@@ -140,4 +146,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(start_services())
     except KeyboardInterrupt:
-        pass
+        pass,
