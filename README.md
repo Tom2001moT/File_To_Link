@@ -96,18 +96,18 @@ In your Render service dashboard, add these environment variables:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `API_ID` | Your Telegram API ID | `12345678` |
-| `API_HASH` | Your Telegram API Hash | `abcdef1234567890abcdef1234567890` |
-| `BOT_TOKEN` | Your bot token from BotFather | `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11` |
+| `API_HASH` | Your Telegram API Hash | `your_api_hash_here` |
+| `BOT_TOKEN` | Your bot token from BotFather | `your_bot_token_here` |
 | `LOG_CHANNEL` | Your private channel ID | `-1001234567890` |
 | `PORT` | Port number (auto-set by Render) | `8080` |
 
 ### Step 3: Set External URL
 
-After deployment, Render will provide you with a URL like `https://your-service.onrender.com`. You need to set this as an environment variable:
+After deployment, Render will provide you with a URL like `https://your-service.onrender.com`. You need to set this as an environment variable so the bot can generate correct download links:
 
-| Variable | Value |
-|----------|-------|
-| `RENDER_EXTERNAL_URL` | `https://your-service.onrender.com` |
+| Variable | Description | Value |
+|----------|-------------|-------|
+| `RENDER_EXTERNAL_URL` | Your service URL (used to generate download links) | `https://your-service.onrender.com` |
 
 ### Step 4: Keep the Service Alive
 
