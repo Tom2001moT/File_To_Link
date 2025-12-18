@@ -1,4 +1,3 @@
-
 import os
 import asyncio
 import logging
@@ -21,7 +20,7 @@ PORT = int(os.environ.get("PORT", 8080))
 try:
     LOG_CHANNEL = int(LOG_CHANNEL_RAW)
 except ValueError:
-    LOG_CHANNEL = 0 # Invalid ID
+    LOG_CHANNEL = 0 
 
 # --- PYROGRAM CLIENT ---
 app = Client(
@@ -38,12 +37,10 @@ async def handle_stream(request):
     try:
         message_id = int(request.match_info['id'])
         msg = await app.get_messages(LOG_CHANNEL, message_id)
-        
-        if not msg or not msg.media:
-            return web.Response(status=404, text="File Not Found or No Media")
+        if not msg or not msg.media: return web.Response(status=404, text="File Not Found")
         
         media = getattr(msg, msg.media.value)
-        filename = getattr(media, "file_name", "unknown_file") or "file"
+        filename = getattr(media, "file_name", "unknown") or "file"
         
         response = web.StreamResponse(status=200, headers={
             'Content-Type': getattr(media, "mime_type", "application/octet-stream"),
@@ -51,10 +48,7 @@ async def handle_stream(request):
             'Content-Length': str(media.file_size)
         })
         await response.prepare(request)
-        
-        async for chunk in app.stream_media(msg):
-            await response.write(chunk)
-            
+        async for chunk in app.stream_media(msg): await response.write(chunk)
         return response
     except Exception as e:
         return web.Response(status=500, text=f"Error: {e}")
@@ -78,8 +72,7 @@ async def start_polling():
                     await asyncio.sleep(5)
                     continue
                 
-                updates = data.get("result", [])
-                for update in updates:
+                for update in data.get("result", []):
                     offset = update["update_id"] + 1
                     if "message" not in update: continue
                     
@@ -87,49 +80,49 @@ async def start_polling():
                     chat_id = message["chat"]["id"]
                     text = message.get("text", "")
                     
-                    print(f"DEBUG: Fetched message from {chat_id}")
+                    # --- ID DETECTOR LOGIC ---
+                    # If user forwards a message from a channel, tell them the ID
+                    if "forward_from_chat" in message:
+                        fwd_id = message["forward_from_chat"]["id"]
+                        fwd_title = message["forward_from_chat"]["title"]
+                        await app.send_message(chat_id, f"📢 **Channel Detected!**\n\n**Name:** {fwd_title}\n**ID:** `{fwd_id}`\n\nCopy this ID to Render LOG_CHANNEL variable!")
+                        continue
 
                     # Handle /start
                     if text.startswith("/start"):
-                        await app.send_message(chat_id, "👋 **Bot is Online!**\nSend me a file.")
+                        await app.send_message(chat_id, "👋 **Bot is Online!**\n\n1. Forward a message from your Log Channel to get the correct ID.\n2. Or send me a file to convert.")
                         continue
                     
-                    # Handle Media
                     if not any(key in message for key in ["document", "video", "audio", "photo"]):
-                        await app.send_message(chat_id, "❌ Please send a file, video, or photo.")
                         continue
 
                     # Process File
                     status_msg = await app.send_message(chat_id, "🔄 **Processing...**")
                     try:
-                        # Copy to Log Channel
-                        log_msg = await app.copy_message(
-                            chat_id=LOG_CHANNEL,
-                            from_chat_id=chat_id,
-                            message_id=message["message_id"]
-                        )
+                        # Attempt to resolve peer if ID is valid
+                        try:
+                            # Try to see the channel first to cache it
+                            await app.get_chat(LOG_CHANNEL)
+                        except:
+                            pass # Continue anyway, maybe it's already cached
+
+                        log_msg = await app.copy_message(LOG_CHANNEL, chat_id, message["message_id"])
                         
-                        base_url = os.environ.get("RENDER_EXTERNAL_URL", f"http://localhost:{PORT}")
-                        stream_link = f"{base_url}/dl/{log_msg.id}"
-                        
+                        link = f"{os.environ.get('RENDER_EXTERNAL_URL', f'http://localhost:{PORT}')}/dl/{log_msg.id}"
                         filename = "file"
                         if log_msg.document: filename = log_msg.document.file_name
                         elif log_msg.video: filename = log_msg.video.file_name
-                        elif log_msg.audio: filename = log_msg.audio.file_name
                         
                         await app.edit_message_text(
-                            chat_id=chat_id,
-                            message_id=status_msg.id,
-                            text=f"✅ **File Saved!**\n\n📂 **Name:** `{filename}`\n🔗 **Link:**\n{stream_link}"
+                            chat_id, status_msg.id,
+                            f"✅ **File Saved!**\n\n📂 **Name:** `{filename}`\n🔗 **Link:**\n{link}"
                         )
                     except Exception as e:
-                        print(f"Processing Error: {e}")
-                        # If Peer ID Invalid, inform user
-                        err_msg = str(e)
-                        if "PEER_ID_INVALID" in err_msg.upper():
-                             await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: Bot cannot access Log Channel ({LOG_CHANNEL}). Ensure Bot is ADMIN and ID is correct.")
+                        err = str(e)
+                        if "PEER_ID_INVALID" in err.upper():
+                            await app.edit_message_text(chat_id, status_msg.id, f"❌ **ID Error:** The Log Channel ID `{LOG_CHANNEL}` is invalid or the bot hasn't met the channel.\n\n**FIX:** Forward a message from the channel to this bot right now!")
                         else:
-                             await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: {e}")
+                            await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: {e}")
 
             except Exception as e:
                 print(f"Polling Exception: {e}")
@@ -137,20 +130,9 @@ async def start_polling():
 
 # --- MAIN EXECUTION ---
 async def start_services():
-    print("--- Starting Pyrogram Client ---")
+    print("--- Starting Pyrogram ---")
     await app.start()
-    print("--- Pyrogram Started ---")
     
-    # --- CRITICAL FIX: Force-Resolve Channel ---
-    # This step ensures the bot "knows" the channel before trying to copy to it
-    try:
-        print(f"--- Resolving Log Channel: {LOG_CHANNEL} ---")
-        chat = await app.get_chat(LOG_CHANNEL)
-        print(f"--- Success! Found Channel: {chat.title} (ID: {chat.id}) ---")
-    except Exception as e:
-        print(f"--- WARNING: Could not resolve Log Channel: {e} ---")
-        print("--- Make sure the Bot is an ADMIN in the channel! ---")
-
     print("--- Starting Web Server ---")
     server = web.Application()
     server.router.add_get('/', health_check)
