@@ -2,8 +2,14 @@ import os
 import asyncio
 import urllib.request
 import json
+import logging
 from pyrogram import Client, filters
 from aiohttp import web
+
+# --- LOGGING CONFIGURATION ---
+logging.basicConfig(level=logging.INFO) # Shows Info logs
+logger = logging.getLogger("pyrogram")
+logger.setLevel(logging.INFO) # Set to DEBUG to see raw packets if needed
 
 # --- CONFIGURATION ---
 API_ID = int(os.environ.get("API_ID", 0)) 
@@ -24,6 +30,7 @@ def nuke_webhook():
         print(f"--- ⚠️ Webhook Reset Failed: {e} ---")
 
 # --- INITIALIZE CLIENT ---
+# ipv6=False is crucial for Render
 app = Client(
     "file_to_link_bot",
     api_id=API_ID,
@@ -100,7 +107,7 @@ async def health_check(request):
 
 # --- MAIN LOOP ---
 async def start_services():
-    # 1. Nuke Webhook BEFORE starting Pyrogram
+    # 1. Nuke Webhook
     nuke_webhook()
     
     print("--- Starting Bot ---")
