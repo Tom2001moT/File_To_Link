@@ -1,14 +1,13 @@
 import os
 import asyncio
 import logging
-from pyrogram import Client, filters
-from pyrogram.errors import FloodWait
+import aiohttp
+from pyrogram import Client
 from aiohttp import web
 
 # --- LOGGING ---
-logging.basicConfig(level=logging.WARNING) # Reduce noise
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("bot")
-logger.setLevel(logging.INFO)
 
 # --- CONFIGURATION ---
 API_ID = int(os.environ.get("API_ID", 0)) 
@@ -17,7 +16,8 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "0"))
 PORT = int(os.environ.get("PORT", 8080))
 
-# --- CLIENT ---
+# --- PYROGRAM CLIENT ---
+# We use this for heavy lifting (copying/streaming)
 app = Client(
     "file_to_link_bot",
     api_id=API_ID,
@@ -31,19 +31,28 @@ app = Client(
 async def handle_stream(request):
     try:
         message_id = int(request.match_info['id'])
+        # Fetch message using Pyrogram
         msg = await app.get_messages(LOG_CHANNEL, message_id)
-        if not msg or not msg.media: return web.Response(status=404, text="File Not Found")
+        
+        if not msg or not msg.media:
+            return web.Response(status=404, text="File Not Found or No Media")
         
         media = getattr(msg, msg.media.value)
-        filename = getattr(media, "file_name", "unknown") or "file"
+        filename = getattr(media, "file_name", "unknown_file") or "file"
+        file_size = getattr(media, "file_size", 0)
+        mime_type = getattr(media, "mime_type", "application/octet-stream")
         
         response = web.StreamResponse(status=200, headers={
-            'Content-Type': getattr(media, "mime_type", "application/octet-stream"),
+            'Content-Type': mime_type,
             'Content-Disposition': f'attachment; filename="{filename}"',
-            'Content-Length': str(media.file_size)
+            'Content-Length': str(file_size)
         })
         await response.prepare(request)
-        async for chunk in app.stream_media(msg): await response.write(chunk)
+        
+        # Stream using Pyrogram
+        async for chunk in app.stream_media(msg):
+            await response.write(chunk)
+            
         return response
     except Exception as e:
         return web.Response(status=500, text=f"Error: {e}")
@@ -51,56 +60,89 @@ async def handle_stream(request):
 async def health_check(request):
     return web.Response(text="Bot is running")
 
-# --- MANUAL UPDATE FETCHER ---
-# This function manually checks for updates if PUSH fails
-async def force_fetch_updates():
-    print("--- 🚀 Starting Manual Update Fetcher ---")
+# --- MANUAL HTTP POLLING (The Fix) ---
+async def start_polling():
+    print("--- 🚀 Starting Hybrid HTTP Poller ---")
     offset = 0
-    while True:
-        try:
-            # Manually ask Telegram for updates
-            updates = await app.get_updates(offset=offset, limit=100, timeout=10)
-            
-            for update in updates:
-                offset = update.update_id + 1
-                
-                # We only care about new messages
-                if not update.message: continue
-                message = update.message
-                
-                print(f"DEBUG: Manually fetched message {message.id} from {message.chat.id}")
-                
-                # --- PROCESS MESSAGE ---
-                if message.text and message.text.startswith("/start"):
-                    await message.reply_text("👋 **Bot is Online (Force Mode)!**\nSend me a file.")
-                    continue
-                
-                if not message.media:
-                    await message.reply_text("❌ Please send a file/video/photo.")
-                    continue
-
-                # Process File
-                status = await message.reply_text("🔄 **Processing...**", quote=True)
-                try:
-                    log_msg = await message.copy(chat_id=LOG_CHANNEL)
-                    link = f"{os.environ.get('RENDER_EXTERNAL_URL', f'http://localhost:{PORT}')}/dl/{log_msg.id}"
-                    await status.edit_text(f"✅ **Link Generated:**\n{link}")
-                except Exception as e:
-                    await status.edit_text(f"❌ Error: {e}")
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates"
+    
+    async with aiohttp.ClientSession() as session:
+        while True:
+            try:
+                # 1. Fetch Updates via HTTP (Bypasses Pyrogram's listener)
+                async with session.get(url, params={"offset": offset, "timeout": 10}) as resp:
+                    data = await resp.json()
                     
-        except FloodWait as e:
-            await asyncio.sleep(e.value)
-        except Exception as e:
-            print(f"Fetcher Error: {e}")
-            await asyncio.sleep(5)
+                if not data.get("ok"):
+                    print(f"Polling Error: {data}")
+                    await asyncio.sleep(5)
+                    continue
+                
+                updates = data.get("result", [])
+                
+                for update in updates:
+                    offset = update["update_id"] + 1
+                    
+                    if "message" not in update:
+                        continue
+                        
+                    message = update["message"]
+                    chat_id = message["chat"]["id"]
+                    text = message.get("text", "")
+                    
+                    print(f"DEBUG: Fetched message from {chat_id}")
 
-# --- MAIN STARTUP ---
+                    # 2. Handle /start
+                    if text.startswith("/start"):
+                        await app.send_message(chat_id, "👋 **Bot is Online!**\nSend me a file.")
+                        continue
+                    
+                    # 3. Handle Media
+                    # Check if message has media keys
+                    if not any(key in message for key in ["document", "video", "audio", "photo"]):
+                        await app.send_message(chat_id, "❌ Please send a file, video, or photo.")
+                        continue
+
+                    # 4. Process Logic (Using Pyrogram for actions)
+                    status_msg = await app.send_message(chat_id, "🔄 **Processing...**")
+                    
+                    try:
+                        # Copy from User -> Log Channel
+                        # We use the message_id from the HTTP update
+                        log_msg = await app.copy_message(
+                            chat_id=LOG_CHANNEL,
+                            from_chat_id=chat_id,
+                            message_id=message["message_id"]
+                        )
+                        
+                        base_url = os.environ.get("RENDER_EXTERNAL_URL", f"http://localhost:{PORT}")
+                        stream_link = f"{base_url}/dl/{log_msg.id}"
+                        
+                        filename = "file"
+                        if log_msg.document: filename = log_msg.document.file_name
+                        elif log_msg.video: filename = log_msg.video.file_name
+                        elif log_msg.audio: filename = log_msg.audio.file_name
+                        
+                        await app.edit_message_text(
+                            chat_id=chat_id,
+                            message_id=status_msg.id,
+                            text=f"✅ **File Saved!**\n\n📂 **Name:** `{filename}`\n🔗 **Link:**\n{stream_link}"
+                        )
+                    except Exception as e:
+                        print(f"Processing Error: {e}")
+                        await app.edit_message_text(chat_id, status_msg.id, f"❌ Error: {e}")
+
+            except Exception as e:
+                print(f"Polling Exception: {e}")
+                await asyncio.sleep(5)
+
+# --- MAIN EXECUTION ---
 async def start_services():
-    print("--- Starting Bot ---")
+    print("--- Starting Pyrogram Client ---")
     await app.start()
-    print(f"--- Bot Logged In as @{(await app.get_me()).username} ---")
+    print("--- Pyrogram Started ---")
 
-    # Start the Web Server
+    print("--- Starting Web Server ---")
     server = web.Application()
     server.router.add_get('/', health_check)
     server.router.add_get('/dl/{id}', handle_stream)
@@ -110,8 +152,8 @@ async def start_services():
     await site.start()
     print(f"--- Web Server running on port {PORT} ---")
 
-    # Start the Manual Fetcher loop
-    await force_fetch_updates()
+    # Start the hybrid polling loop
+    await start_polling()
 
 if __name__ == "__main__":
     try:
