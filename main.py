@@ -6,31 +6,28 @@ import logging
 from pyrogram import Client, filters
 from aiohttp import web
 
-# --- LOGGING CONFIGURATION ---
-logging.basicConfig(level=logging.INFO) # Shows Info logs
+# --- LOGGING ---
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyrogram")
-logger.setLevel(logging.INFO) # Set to DEBUG to see raw packets if needed
+logger.setLevel(logging.INFO)
 
-# --- CONFIGURATION ---
+# --- CONFIG ---
 API_ID = int(os.environ.get("API_ID", 0)) 
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 LOG_CHANNEL = int(os.environ.get("LOG_CHANNEL", "0"))
 PORT = int(os.environ.get("PORT", 8080))
 
-# --- HELPER: CLEAR WEBHOOK ---
+# --- WEBHOOK CLEAR ---
 def nuke_webhook():
-    print("--- 🧹 Clearing Zombie Webhooks... ---")
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/deleteWebhook?drop_pending_updates=True"
         with urllib.request.urlopen(url) as response:
-            data = json.load(response)
-            print(f"--- Webhook Reset Result: {data} ---")
+            print(f"--- Webhook Reset: {json.load(response)} ---")
     except Exception as e:
-        print(f"--- ⚠️ Webhook Reset Failed: {e} ---")
+        print(f"--- Webhook Reset Failed: {e} ---")
 
-# --- INITIALIZE CLIENT ---
-# ipv6=False is crucial for Render
+# --- CLIENT ---
 app = Client(
     "file_to_link_bot",
     api_id=API_ID,
@@ -40,22 +37,23 @@ app = Client(
     ipv6=False
 )
 
-# --- DEBUG HANDLER ---
-@app.on_message(group=-1)
-async def debug_logger(client, message):
-    print(f"DEBUG: Received message from {message.chat.id}")
-
-# --- BOT HANDLERS ---
-@app.on_message(filters.command("start"))
-async def start_command(client, message):
-    print("DEBUG: Sending /start reply")
-    await message.reply_text("👋 **Bot is Online!**\nSend me a file to get a link.")
-
-@app.on_message(filters.private & (filters.document | filters.video | filters.audio | filters.photo))
-async def handle_file(client, message):
-    print(f"DEBUG: Processing file from {message.chat.id}")
-    status_msg = await message.reply_text("🔄 **Processing...**", quote=True)
+# --- CATCH-ALL HANDLER (NO FILTERS) ---
+@app.on_message()
+async def catch_all(client, message):
+    print(f"DEBUG: Message Received! ID: {message.id} | Type: {message.media}")
     
+    # 1. Reply to /start
+    if message.text and message.text.startswith("/start"):
+        await message.reply_text("👋 Bot is Online! Send me any file.")
+        return
+
+    # 2. Check for Media
+    if not message.media:
+        await message.reply_text("❌ Please send a File, Video, or Photo.")
+        return
+
+    # 3. Process File
+    status_msg = await message.reply_text("🔄 **Processing...**", quote=True)
     try:
         log_msg = await message.copy(chat_id=LOG_CHANNEL)
         file_id = log_msg.id
@@ -70,10 +68,10 @@ async def handle_file(client, message):
         )
     except Exception as e:
         print(f"ERROR: {e}")
-        await status_msg.edit_text(f"❌ **Error:** {str(e)}")
+        await status_msg.edit_text(f"❌ **Error:** {e}")
 
 def get_filename(msg):
-    if msg.document: return msg.document.file_name
+    if msg.document: return msg.document.file_name or "file.bin"
     if msg.video: return msg.video.file_name or "video.mp4"
     if msg.audio: return msg.audio.file_name or "audio.mp3"
     if msg.photo: return "photo.jpg"
@@ -82,43 +80,31 @@ def get_filename(msg):
 # --- WEB SERVER ---
 async def handle_stream(request):
     try:
-        message_id = int(request.match_info['id'])
-        msg = await app.get_messages(LOG_CHANNEL, message_id)
-        if not msg or msg.empty: return web.Response(status=404, text="404: File not found")
+        msg = await app.get_messages(LOG_CHANNEL, int(request.match_info['id']))
+        if not msg or not msg.media: return web.Response(status=404, text="Not Found")
         
-        media = getattr(msg, msg.media.value) if msg.media else None
-        if not media: return web.Response(status=404, text="404: No media")
-
-        headers = {
+        media = getattr(msg, msg.media.value)
+        response = web.StreamResponse(status=200, headers={
             'Content-Type': getattr(media, "mime_type", "application/octet-stream"),
             'Content-Disposition': f'attachment; filename="{get_filename(msg)}"',
             'Content-Length': str(media.file_size)
-        }
-        response = web.StreamResponse(status=200, headers=headers)
+        })
         await response.prepare(request)
-        async for chunk in app.stream_media(msg):
-            await response.write(chunk)
+        async for chunk in app.stream_media(msg): await response.write(chunk)
         return response
-    except Exception as e:
-        return web.Response(status=500, text=f"Error: {e}")
+    except Exception as e: return web.Response(status=500, text=str(e))
 
-async def health_check(request):
-    return web.Response(text="Bot is running")
-
-# --- MAIN LOOP ---
+# --- START ---
 async def start_services():
-    # 1. Nuke Webhook
     nuke_webhook()
-    
     print("--- Starting Bot ---")
     await app.start()
     print(f"--- Bot Logged In as @{(await app.get_me()).username} ---")
-
-    print("--- Starting Web Server ---")
+    
     server = web.Application()
-    server.router.add_get('/', health_check)
     server.router.add_get('/dl/{id}', handle_stream)
-
+    server.router.add_get('/', lambda r: web.Response(text="Bot Running"))
+    
     runner = web.AppRunner(server)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', PORT)
@@ -128,7 +114,4 @@ async def start_services():
     await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(start_services())
-    except KeyboardInterrupt:
-        pass
+    asyncio.run(start_services())
