@@ -164,15 +164,14 @@ Bot: ✅ File Saved!
 ### Architecture
 
 ```
-Telegram API → HTTP Polling → Bot Handler
-User → File Upload → Bot → Log Channel (Storage)
-                              ↓
+User → Telegram → Bot (HTTP Polling) → Log Channel (Storage)
+                         ↓
 User → Download Link → Web Server → Telegram API → File Stream
 ```
 
 ### Technical Details
 
-- Uses **hybrid HTTP polling** for receiving updates instead of webhooks
+- Uses **HTTP polling** (via Telegram's getUpdates API) for receiving updates instead of webhooks
 - Implements **automatic channel ID detection** when users forward messages
 - Provides **PEER_ID_INVALID error handling** with helpful recovery instructions
 - Streams files **chunk-by-chunk** to minimize memory usage
