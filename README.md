@@ -10,14 +10,14 @@ A Telegram bot that converts files into direct download links. Send any file (vi
 - 🚀 **Efficient Streaming**: Uses chunk-by-chunk streaming to minimize RAM usage
 - ⚡ **Fast & Reliable**: Built with async/await for optimal performance
 - 🔒 **Secure Storage**: Files are stored in your private Telegram channel
+- 🆔 **Channel ID Detector**: Forward a message from any channel to get its ID instantly
 
 ## 🛠️ Tech Stack
 
 - **Python 3.7+**
-- **Pyrogram**: Modern Telegram Bot API framework
-- **Aiohttp**: Asynchronous HTTP server
-- **TgCrypto**: Cryptographic library for Telegram
-- **Uvloop**: High-performance event loop
+- **Pyrogram 2.0.106**: Modern Telegram Bot API framework
+- **Aiohttp 3.9.1**: Asynchronous HTTP server for file streaming
+- **TgCrypto 1.2.5**: Cryptographic library for fast Telegram encryption
 
 ## 📋 Prerequisites
 
@@ -50,8 +50,9 @@ Before you begin, you'll need:
 
 1. Create a new private channel in Telegram
 2. Add your bot as an administrator to the channel
-3. Get the channel ID:
-   - Forward a message from the channel to [@userinfobot](https://t.me/userinfobot)
+3. Get the channel ID using one of these methods:
+   - **Method 1 (Recommended)**: Forward a message from your channel to your bot, and it will reply with the channel ID
+   - **Method 2**: Forward a message from the channel to [@userinfobot](https://t.me/userinfobot)
    - Copy the channel ID (it will be negative, e.g., `-1001234567890`)
 
 ### Step 4: Local Installation
@@ -115,39 +116,67 @@ Render's free tier may sleep after inactivity. The bot includes a health check e
 
 ## 📖 Usage
 
-1. **Start the Bot**: Send `/start` to your bot
-2. **Send a File**: Upload any video, audio, document, or photo
-3. **Get the Link**: The bot will respond with a direct download link
-4. **Share**: Share the link with anyone - they can download the file directly
+### Getting Channel ID
 
-### Example
+1. **Start the Bot**: Send `/start` to your bot
+2. **Forward a Message**: Forward any message from your private channel to the bot
+3. **Copy the ID**: The bot will reply with the channel name and ID
+4. **Set in Render**: Add the channel ID to your `LOG_CHANNEL` environment variable
+
+### Converting Files to Links
+
+1. **Send a File**: Upload any video, audio, document, or photo to the bot
+2. **Get the Link**: The bot will respond with a direct download link
+3. **Share**: Share the link with anyone - they can download the file directly
+
+### Example: Getting Channel ID
+
+```
+User: [Forwards a message from a channel]
+Bot: 📢 Channel Detected!
+
+     Name: My Private Channel
+     ID: `-1001234567890`
+
+     Copy this ID to Render LOG_CHANNEL variable!
+```
+
+### Example: File Upload
 
 ```
 User: [Sends a video file]
 Bot: ✅ File Saved!
 
-     📂 Name: `my_video.mp4`
-     🔗 Download Link:
+     📂 Name: my_video.mp4
+     🔗 Link:
      https://your-service.onrender.com/dl/12345
-
-     ⚠️ Note: This link streams directly from Telegram.
 ```
 
 ## 🔧 How It Works
 
 1. **User uploads a file** to the bot via Telegram
-2. **Bot forwards the file** to your private log channel for permanent storage
-3. **Bot generates a unique link** using the message ID from the log channel
-4. **Web server streams the file** when someone accesses the link
-5. **Direct download** happens via chunk-by-chunk streaming from Telegram
+2. **Bot uses HTTP polling** to receive updates from Telegram API
+3. **Bot forwards the file** to your private log channel for permanent storage
+4. **Bot generates a unique link** using the message ID from the log channel
+5. **Web server streams the file** when someone accesses the link
+6. **Direct download** happens via chunk-by-chunk streaming from Telegram
 
 ### Architecture
 
 ```
-User → Telegram Bot → Log Channel (Storage)
-                     ↓
+Telegram API → HTTP Polling → Bot Handler
+User → File Upload → Bot → Log Channel (Storage)
+                              ↓
 User → Download Link → Web Server → Telegram API → File Stream
 ```
+
+### Technical Details
+
+- Uses **hybrid HTTP polling** for receiving updates instead of webhooks
+- Implements **automatic channel ID detection** when users forward messages
+- Provides **PEER_ID_INVALID error handling** with helpful recovery instructions
+- Streams files **chunk-by-chunk** to minimize memory usage
+- Runs **Pyrogram client** and **aiohttp web server** concurrently
 
 ## 📁 Project Structure
 
@@ -186,16 +215,26 @@ RENDER_EXTERNAL_URL  # Your service URL (for generating links)
 - Check if environment variables are set correctly
 - Verify bot token is valid
 - Ensure bot is added as admin to the log channel
+- Check the logs in Render dashboard for any errors
+
+### PEER_ID_INVALID Error
+This error occurs when the bot hasn't "met" the channel yet:
+- **Solution 1**: Forward a message from your channel directly to the bot
+- **Solution 2**: Send any message in the channel after adding the bot as admin
+- **Solution 3**: Use the bot's Channel ID detector by forwarding a channel message
+- The bot will guide you with: "Forward a message from the channel to this bot right now!"
 
 ### Download Links Not Working
 - Verify `RENDER_EXTERNAL_URL` is set correctly
 - Check if web server is running (visit the health check endpoint `/`)
 - Ensure the message ID exists in the log channel
+- Confirm the file hasn't been deleted from the log channel
 
 ### File Upload Errors
 - Check file size (max 2GB for regular users, 4GB for Premium)
 - Ensure bot has permission to forward messages to log channel
-- Verify channel ID is correct (should be negative)
+- Verify channel ID is correct (should be negative, e.g., `-1001234567890`)
+- Make sure the bot is an administrator with "Post Messages" permission
 
 ## 🤝 Contributing
 
