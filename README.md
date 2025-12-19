@@ -133,10 +133,10 @@ Render's free tier may sleep after inactivity. The bot includes a health check e
 
 ```
 User: [Forwards a message from a channel]
-Bot: 📢 Channel Detected!
+Bot: 📢 **Channel Detected!**
 
-     Name: My Private Channel
-     ID: `-1001234567890`
+     **Name:** My Private Channel
+     **ID:** `-1001234567890`
 
      Copy this ID to Render LOG_CHANNEL variable!
 ```
@@ -145,10 +145,10 @@ Bot: 📢 Channel Detected!
 
 ```
 User: [Sends a video file]
-Bot: ✅ File Saved!
+Bot: ✅ **File Saved!**
 
-     📂 Name: my_video.mp4
-     🔗 Link:
+     📂 **Name:** `my_video.mp4`
+     🔗 **Link:**
      https://your-service.onrender.com/dl/12345
 ```
 
