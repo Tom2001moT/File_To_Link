@@ -111,7 +111,7 @@ async def start_polling():
                             "I can generate direct download links for any file you send me.\n\n"
                             "🔹 **How to use:** Just send or forward a file here.\n"
                             "🔹 **Commands:** /help, /status, /about"
-                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                            " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, welcome_text)
                         continue
@@ -123,7 +123,7 @@ async def start_polling():
                             "2️⃣ **Wait**: I will process it and store it in my database.\n"
                             "3️⃣ **Get Link**: You will receive a direct link to download/stream.\n\n"
                             "📌 *Links are permanent as long as the file stays in the log channel.*"
-                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                            " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, help_text)
                         continue
@@ -136,7 +136,7 @@ async def start_polling():
                             f"📡 **Mode:** Hybrid Polling (24/7)\n"
                             f"📂 **Log Channel:** `{LOG_CHANNEL_RAW}`\n"
                             f"🌐 **Server:** Render Cloud"
-                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                            " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, status_text)
                         continue
@@ -167,6 +167,7 @@ async def start_polling():
                             f"📂 **Filename:** `{filename}`\n"
                             f"🔗 **Direct Link:**\n{file_url}\n\n"
                             "⚡ *Direct high-speed download enabled.*"
+                            " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         
                         await app.edit_message_text(chat_id, status.id, success_text)
