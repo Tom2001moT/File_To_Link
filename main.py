@@ -5,6 +5,7 @@ import aiohttp
 import time
 import json
 import urllib.request
+from datetime import datetime
 from pyrogram import Client
 from aiohttp import web
 
@@ -18,11 +19,12 @@ API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 LOG_CHANNEL_RAW = os.environ.get("LOG_CHANNEL", "@wdgfiletolinkbot")
 PORT = int(os.environ.get("PORT", 8080))
-# Render provides this URL automatically
 APP_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
 
+# Start time for /status command
+START_TIME = datetime.now()
+
 # Sanitize Channel ID / Username
-# If it's a number, convert to int. If it's a username, keep as string.
 try:
     if LOG_CHANNEL_RAW.startswith("-") or LOG_CHANNEL_RAW.isdigit():
         LOG_CHANNEL = int(LOG_CHANNEL_RAW)
@@ -41,6 +43,25 @@ app = Client(
     ipv6=False
 )
 
+# --- HELPER FUNCTIONS ---
+
+def get_uptime():
+    delta = datetime.now() - START_TIME
+    hours, remainder = divmod(int(delta.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    days, hours = divmod(hours, 24)
+    return f"{days}d {hours}h {minutes}m {seconds}s"
+
+def get_filename(msg_obj):
+    # For Pyrogram copy_message results
+    if hasattr(msg_obj, 'document') and msg_obj.document:
+        return msg_obj.document.file_name or "file.bin"
+    if hasattr(msg_obj, 'video') and msg_obj.video:
+        return msg_obj.video.file_name or "video.mp4"
+    if hasattr(msg_obj, 'audio') and msg_obj.audio:
+        return msg_obj.audio.file_name or "audio.mp3"
+    return "file"
+
 # --- TASK 1: SELF-PING (STAY AWAKE 24/7) ---
 async def keep_alive():
     if not APP_URL:
@@ -51,14 +72,13 @@ async def keep_alive():
     async with aiohttp.ClientSession() as session:
         while True:
             try:
-                # Ping the health check endpoint
                 async with session.get(APP_URL, timeout=10) as resp:
                     print(f"--- 💤 Ping Status: {resp.status} at {time.ctime()} ---")
             except Exception as e:
                 print(f"--- 💤 Ping Error: {e} ---")
             await asyncio.sleep(600) # 10 minutes
 
-# --- TASK 2: HYBRID POLLING ---
+# --- TASK 2: HYBRID POLLING (HANDLES COMMANDS & FILES) ---
 async def start_polling():
     print("--- 🚀 Starting Hybrid Update Poller ---")
     offset = 0
@@ -81,33 +101,78 @@ async def start_polling():
                     msg = update["message"]
                     chat_id = msg["chat"]["id"]
                     msg_id = msg["message_id"]
+                    text = msg.get("text", "")
 
-                    if msg.get("text", "").startswith("/start"):
-                        await app.send_message(chat_id, "👋 **Bot is Online!**\nSend me any file, video, or photo to generate a link.")
+                    # --- COMMAND HANDLERS ---
+                    
+                    if text.startswith("/start"):
+                        welcome_text = (
+                            "👋 **Welcome to FileToLink Bot!**\n\n"
+                            "I can generate direct download links for any file you send me.\n\n"
+                            "🔹 **How to use:** Just send or forward a file here.\n"
+                            "🔹 **Commands:** /help, /status, /about"
+                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                        )
+                        await app.send_message(chat_id, welcome_text)
                         continue
 
-                    if not any(k in msg for k in ["document", "video", "audio", "photo"]):
+                    if text.startswith("/help"):
+                        help_text = (
+                            "📖 **Help Menu**\n\n"
+                            "1️⃣ **Send a File**: Send any document, video, or audio (up to 2GB).\n"
+                            "2️⃣ **Wait**: I will process it and store it in my database.\n"
+                            "3️⃣ **Get Link**: You will receive a direct link to download/stream.\n\n"
+                            "📌 *Links are permanent as long as the file stays in the log channel.*"
+                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                        )
+                        await app.send_message(chat_id, help_text)
                         continue
 
-                    status = await app.send_message(chat_id, "🔄 **Processing...**")
+                    if text.startswith("/status"):
+                        status_text = (
+                            "📊 **System Status**\n\n"
+                            f"✅ **Bot:** Online\n"
+                            f"⏳ **Uptime:** `{get_uptime()}`\n"
+                            f"📡 **Mode:** Hybrid Polling (24/7)\n"
+                            f"📂 **Log Channel:** `{LOG_CHANNEL_RAW}`\n"
+                            f"🌐 **Server:** Render Cloud"
+                            "🔹 **Developer:** @WhiteDeathGaming **WDG**"
+                        )
+                        await app.send_message(chat_id, status_text)
+                        continue
+
+                    if text.startswith("/about"):
+                        await app.send_message(chat_id, "👤 **About**\n\nThis bot was created to provide fast, direct links to Telegram files. Powered by Pyrogram and Render. 🔹 **Developer:** @WhiteDeathGaming **WDG**")
+                        continue
+
+                    # --- MEDIA HANDLING ---
+                    
+                    # Check for media keys (document, video, audio, photo)
+                    has_media = any(k in msg for k in ["document", "video", "audio", "photo"])
+                    if not has_media:
+                        if text and not text.startswith("/"):
+                            await app.send_message(chat_id, "❌ **Please send a valid file.**\nUse /help for more info.")
+                        continue
+
+                    status = await app.send_message(chat_id, "🔄 **Processing your file...**")
                     try:
                         # Copy message to Log Channel
                         log_msg = await app.copy_message(LOG_CHANNEL, chat_id, msg_id)
                         
                         file_url = f"{APP_URL}/dl/{log_msg.id}"
+                        filename = get_filename(log_msg)
                         
-                        filename = "file"
-                        if log_msg.document: filename = log_msg.document.file_name
-                        elif log_msg.video: filename = log_msg.video.file_name or "video.mp4"
-                        elif log_msg.audio: filename = log_msg.audio.file_name or "audio.mp3"
-                        
-                        await app.edit_message_text(
-                            chat_id, status.id, 
-                            f"✅ **Link Generated!**\n\n📂 **Name:** `{filename}`\n🔗 **Link:**\n{file_url}"
+                        success_text = (
+                            "✅ **Link Generated!**\n\n"
+                            f"📂 **Filename:** `{filename}`\n"
+                            f"🔗 **Direct Link:**\n{file_url}\n\n"
+                            "⚡ *Direct high-speed download enabled.*"
                         )
+                        
+                        await app.edit_message_text(chat_id, status.id, success_text)
                     except Exception as e:
                         print(f"Processing Error: {e}")
-                        await app.edit_message_text(chat_id, status.id, f"❌ Error: {e}")
+                        await app.edit_message_text(chat_id, status.id, f"❌ **Error:** {e}\n\nPlease check if the bot is an admin in the log channel.")
 
             except Exception as e:
                 print(f"Polling Exception: {e}")
@@ -117,7 +182,6 @@ async def start_polling():
 async def handle_stream(request):
     try:
         message_id = int(request.match_info['id'])
-        # Fetch message from the resolved LOG_CHANNEL
         msg = await app.get_messages(LOG_CHANNEL, message_id)
         if not msg or not msg.media: return web.Response(status=404, text="Not Found")
         
@@ -135,16 +199,16 @@ async def handle_stream(request):
     except Exception as e: return web.Response(status=500, text=str(e))
 
 async def health_check(request):
-    return web.Response(text="Bot is running 24/7")
+    return web.Response(text=f"Bot is running 24/7\nUptime: {get_uptime()}")
 
 # --- STARTUP ---
 async def start_services():
     print("--- 🤖 Starting Telegram Client ---")
     await app.start()
     
-    # Force resolve channel so Pyrogram doesn't throw PeerID error
+    # Resolve channel on startup
     resolved = False
-    for i in range(5):
+    for i in range(3):
         try:
             print(f"--- 🔎 Attempting to resolve Log Channel: {LOG_CHANNEL} ---")
             chat = await app.get_chat(LOG_CHANNEL)
@@ -154,9 +218,6 @@ async def start_services():
         except Exception as e:
             print(f"--- ⚠️ Resolution attempt {i+1} failed: {e} ---")
             await asyncio.sleep(3)
-
-    if not resolved:
-        print("--- 🚨 CRITICAL: Could not resolve channel. Ensure the bot is an ADMIN in the channel. ---")
 
     server = web.Application()
     server.router.add_get('/dl/{id}', handle_stream)
