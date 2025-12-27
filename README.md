@@ -480,7 +480,7 @@ from aiohttp import web
 API_ID = int(os.environ.get("API_ID", 0)) 
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-LOG_CHANNEL_RAW = os.environ.get("LOG_CHANNEL", "@wdgfiletolinkbot")
+LOG_CHANNEL_RAW = os.environ.get("LOG_CHANNEL", "")
 PORT = int(os.environ.get("PORT", 8080))
 APP_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
 ```
@@ -489,7 +489,7 @@ APP_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
 - `API_ID`: Telegram API ID from my.telegram.org (integer)
 - `API_HASH`: Telegram API hash for authentication (string)
 - `BOT_TOKEN`: Bot token from @BotFather for bot authentication
-- `LOG_CHANNEL`: Channel ID or username where files are stored
+- `LOG_CHANNEL`: Channel ID or username where files are stored (required, no default)
 - `PORT`: HTTP server port (default: 8080)
 - `APP_URL`: External URL for generating download links and self-ping
 
@@ -778,7 +778,7 @@ async def start_polling():
    - Shows user-friendly error message
    - Common issue: Bot not admin in log channel
 
-#### 5. Web Server & File Streaming (Lines 183-203)
+#### 5. Web Server & File Streaming (Lines 183-204)
 
 ```python
 async def handle_stream(request):
@@ -1134,7 +1134,7 @@ web: python main.py
 | `API_ID` | Integer | ✅ Yes | `0` | Telegram API ID from my.telegram.org |
 | `API_HASH` | String | ✅ Yes | `""` | Telegram API Hash from my.telegram.org |
 | `BOT_TOKEN` | String | ✅ Yes | `""` | Bot token from @BotFather |
-| `LOG_CHANNEL` | String/Int | ✅ Yes | `"@wdgfiletolinkbot"` | Channel ID or username for file storage |
+| `LOG_CHANNEL` | String/Int | ✅ Yes | None (required) | Channel ID or username for file storage |
 | `PORT` | Integer | ⚠️ Auto | `8080` | HTTP server port (set by hosting) |
 | `RENDER_EXTERNAL_URL` | String | ✅ Yes | `""` | Public URL for generating download links |
 
