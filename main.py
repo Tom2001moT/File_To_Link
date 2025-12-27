@@ -110,7 +110,7 @@ async def start_polling():
                             "👋 **Welcome to FileToLink Bot!**\n\n"
                             "I can generate direct download links for any file you send me.\n\n"
                             "🔹 **How to use:** Just send or forward a file here.\n"
-                            "🔹 **Commands:** /help, /status, /about"
+                            "🔹 **Commands:** /help, /status, /about\n\n"
                             " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, welcome_text)
@@ -122,7 +122,7 @@ async def start_polling():
                             "1️⃣ **Send a File**: Send any document, video, or audio (up to 2GB).\n"
                             "2️⃣ **Wait**: I will process it and store it in my database.\n"
                             "3️⃣ **Get Link**: You will receive a direct link to download/stream.\n\n"
-                            "📌 *Links are permanent as long as the file stays in the log channel.*"
+                            "📌 *Links are permanent as long as the file stays in the log channel.*\n\n"
                             " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, help_text)
@@ -135,7 +135,7 @@ async def start_polling():
                             f"⏳ **Uptime:** `{get_uptime()}`\n"
                             f"📡 **Mode:** Hybrid Polling (24/7)\n"
                             f"📂 **Log Channel:** `{LOG_CHANNEL_RAW}`\n"
-                            f"🌐 **Server:** Render Cloud"
+                            f"🌐 **Server:** Render Cloud \n\n"
                             " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         await app.send_message(chat_id, status_text)
@@ -166,7 +166,7 @@ async def start_polling():
                             "✅ **Link Generated!**\n\n"
                             f"📂 **Filename:** `{filename}`\n"
                             f"🔗 **Direct Link:**\n{file_url}\n\n"
-                            "⚡ *Direct high-speed download enabled.*"
+                            "⚡ *Direct high-speed download enabled.* \n\n"
                             " 🧑🏻‍💻 **Developer:** @WhiteDeathGaming **WDG**"
                         )
                         
