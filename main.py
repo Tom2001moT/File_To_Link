@@ -164,11 +164,13 @@ async def start_polling():
                                 InlineKeyboardButton("👨‍💻 Developer", url=f"https://t.me/{DEV_USERNAME.replace('@','')}")
                             ]
                         ])
-
+                        
+                        # Direct Download link is now displayed inside the message body for easy copying
                         success_text = (
-                            f"✅ **File Link Ready!**\n\n"
+                            f"✅ **Link Ready!**\n\n"
                             f"📂 **Name:** `{name}`\n"
-                            f"⚖️ **Size:** `{humanbytes(size)}`"
+                            f"⚖️ **Size:** `{humanbytes(size)}`\n\n"
+                            f"🔗 **Download Link:**\n`{dl_url}`"
                         )
                         
                         await app.edit_message_text(chat_id, status.id, success_text, reply_markup=markup)
