@@ -21,6 +21,12 @@ LOG_CHANNEL_RAW = os.environ.get("LOG_CHANNEL", "@wdgfiletolinkbot")
 PORT = int(os.environ.get("PORT", 8080))
 APP_URL = os.environ.get("RENDER_EXTERNAL_URL", "")
 
+# --- DEVELOPER DETAILS ---
+# Edit these to your own details
+DEV_NAME = "WDG Developer"
+DEV_USERNAME = "@WhiteDeathGaming" # Your Telegram username
+DEV_CHANNEL = "https://t.me/wdgfiletolinkbot" # Your support channel
+
 START_TIME = datetime.now()
 
 try:
@@ -103,13 +109,24 @@ async def start_polling():
 
                     # Handle Commands
                     if text.startswith("/start"):
-                        await app.send_message(chat_id, "👋 **Bot Online!**\nSend me any video to generate high-speed links. **WDG**")
+                        await app.send_message(chat_id, "👋 **Bot Online!**\nSend me any video to generate high-speed links.")
                         continue
                     elif text.startswith("/status"):
-                        await app.send_message(chat_id, f"📊 **Uptime:** `{get_uptime()}` **WDG**")
+                        await app.send_message(chat_id, f"📊 **Uptime:** `{get_uptime()}`")
                         continue
                     elif text.startswith("/help"):
-                        await app.send_message(chat_id, "📖 Send a video -> Wait -> Get Direct Link. **WDG**")
+                        await app.send_message(chat_id, "📖 Send a video -> Wait -> Get Direct Link.")
+                        continue
+                    elif text.startswith("/about") or text.startswith("/dev"):
+                        about_txt = (
+                            f"👤 **Developer Details**\n\n"
+                            f"🏷 **Name:** {DEV_NAME}\n"
+                            f"💻 **Language:** Python (Pyrogram)\n"
+                            f"☁️ **Hosting:** Render Cloud\n"
+                            f"📢 **Support:** [Click Here]({DEV_CHANNEL})\n\n"
+                            f"Powered by WDG Streaming Engine."
+                        )
+                        await app.send_message(chat_id, about_txt, disable_web_page_preview=True)
                         continue
 
                     # Handle Media
@@ -123,11 +140,16 @@ async def start_polling():
                         dl_url = f"{APP_URL}/dl/{log_msg.id}"
                         stream_url = f"{APP_URL}/stream/{log_msg.id}"
                         name, size, _ = get_file_info(log_msg)
-                        
+                        share_url = f"https://t.me/share/url?url={dl_url}&text=Download%20{name}"
+
                         markup = InlineKeyboardMarkup([
                             [
                                 InlineKeyboardButton("📥 Download", url=dl_url),
                                 InlineKeyboardButton("📺 Watch Online", url=stream_url)
+                            ],
+                            [
+                                InlineKeyboardButton("🔗 Share Link", url=share_url),
+                                InlineKeyboardButton("👨‍💻 Developer", url=f"https://t.me/{DEV_USERNAME.replace('@','')}")
                             ]
                         ])
 
@@ -143,7 +165,7 @@ async def start_polling():
                 logger.error(f"Poller Loop Error: {e}")
                 await asyncio.sleep(5)
 
-# --- 6. WEB SERVER & INSTANT PLAYER ---
+# --- 6. WEB SERVER ---
 
 PLAYER_HTML = """
 <!DOCTYPE html>
@@ -154,131 +176,74 @@ PLAYER_HTML = """
     <title>Stream: {filename}</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <style>
-        body {{ margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }}
-        .player-container {{ width: 100%; max-width: 960px; border-radius: 12px; overflow: hidden; background: #111; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }}
+        body {{ margin: 0; background: #000; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; }}
+        .player-container {{ width: 100%; max-width: 960px; border-radius: 12px; overflow: hidden; background: #111; }}
         .header {{ padding: 15px; text-align: center; color: #fff; }}
-        h1 {{ margin: 0; font-size: 16px; font-weight: 500; color: #00d2ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .plyr--video {{ height: auto; max-height: 80vh; }}
+        h1 {{ margin: 0; font-size: 16px; color: #00d2ff; overflow: hidden; text-overflow: ellipsis; }}
     </style>
 </head>
 <body>
     <div class="header"><h1>{filename}</h1></div>
-    <div class="player-container">
-        <video id="player" playsinline controls preload="metadata">
-            <source src="{file_url}" type="{mime}" />
-        </video>
-    </div>
+    <div class="player-container"><video id="player" playsinline controls preload="metadata"><source src="{file_url}" type="{mime}" /></video></div>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {{
-            const player = new Plyr('#player', {{
-                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'fullscreen'],
-                settings: ['captions', 'quality', 'speed', 'loop'],
-                speed: {{ selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }},
-                tooltips: {{ controls: true, seek: true }},
-                keyboard: {{ focused: true, global: true }}
-            }});
-            window.player = player;
-        }});
-    </script>
+    <script>const player = new Plyr('#player');</script>
 </body>
 </html>
 """
 
 async def stream_handler(request):
-    """Instant Streaming Handler with Robust Range Support"""
     try:
         mid = int(request.match_info['id'])
         is_dl = request.path.startswith("/dl")
         msg = await app.get_messages(LOG_CHANNEL, mid)
-        if not msg or not msg.media:
-            return web.Response(status=404, text="Media not found")
-
+        if not msg or not msg.media: return web.Response(status=404)
         name, size, mime = get_file_info(msg)
         range_header = request.headers.get("Range")
-        
-        # Default start/end
-        start = 0
-        end = size - 1
-
-        # Parse Range Header
+        start, end = 0, size - 1
         if range_header:
             match = re.search(r'bytes=(\d+)-(\d*)', range_header)
             if match:
                 start = int(match.group(1))
-                if match.group(2):
-                    end = int(match.group(2))
-        
-        # Validate range
-        if start >= size:
-            return web.Response(status=416, headers={'Content-Range': f'bytes */{size}'})
-        
+                if match.group(2): end = int(match.group(2))
         chunk_length = (end - start) + 1
-        
         headers = {
             'Content-Type': mime,
             'Accept-Ranges': 'bytes',
             'Content-Length': str(chunk_length),
             'Content-Range': f'bytes {start}-{end}/{size}',
-            'Content-Disposition': f'{"attachment" if is_dl else "inline"}; filename="{name}"',
-            'Cache-Control': 'no-cache'
+            'Content-Disposition': f'{"attachment" if is_dl else "inline"}; filename="{name}"'
         }
-
-        # 206 Partial Content is critical for modern browsers
         response = web.StreamResponse(status=206 if range_header else 200, headers=headers)
         await response.prepare(request)
-        
-        try:
-            # Stream from Telegram with specific offset
-            async for chunk in app.stream_media(msg, offset=start):
-                if not chunk: break
-                await response.write(chunk)
-                start += len(chunk)
-                if start > end: break
-        except (ConnectionResetError, asyncio.CancelledError):
-            pass 
+        async for chunk in app.stream_media(msg, offset=start):
+            await response.write(chunk)
+            start += len(chunk)
+            if start > end: break
         return response
-    except Exception as e:
-        logger.error(f"Streaming Error: {e}")
-        return web.Response(status=500)
+    except: return web.Response(status=500)
 
 async def handle_player(request):
-    """Renders the HTML Player with direct file source"""
-    try:
-        mid = int(request.match_info['id'])
-        msg = await app.get_messages(LOG_CHANNEL, mid)
-        if not msg: return web.Response(status=404)
-        name, _, mime = get_file_info(msg)
-        # We point the <source> to the /file/ endpoint which handles raw range requests
-        file_url = f"{APP_URL}/file/{mid}"
-        return web.Response(text=PLAYER_HTML.format(filename=name, file_url=file_url, mime=mime), content_type='text/html')
-    except: return web.Response(status=404)
-
-# --- 7. STARTUP ---
+    mid = int(request.match_info['id'])
+    msg = await app.get_messages(LOG_CHANNEL, mid)
+    if not msg: return web.Response(status=404)
+    name, _, mime = get_file_info(msg)
+    file_url = f"{APP_URL}/file/{mid}"
+    return web.Response(text=PLAYER_HTML.format(filename=name, file_url=file_url, mime=mime), content_type='text/html')
 
 async def start_services():
-    logger.info("--- 🤖 BOT LOGGING IN ---")
     await app.start()
-    
-    # Warm up channel cache
     try: await app.get_chat(LOG_CHANNEL)
     except: pass
-
     server = web.Application()
     server.router.add_get('/dl/{id}', stream_handler)
     server.router.add_get('/stream/{id}', handle_player)
     server.router.add_get('/file/{id}', stream_handler)
-    server.router.add_get('/', lambda r: web.Response(text=f"Bot Online. Uptime: {get_uptime()}"))
-    
+    server.router.add_get('/', lambda r: web.Response(text="Bot Online"))
     runner = web.AppRunner(server)
     await runner.setup()
     await web.TCPSite(runner, '0.0.0.0', PORT).start()
-    
-    logger.info(f"--- 🌐 WEB SERVER LIVE ON PORT {PORT} ---")
     await asyncio.gather(keep_alive(), start_polling())
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(start_services())
-    except (KeyboardInterrupt, SystemExit):
-        pass
+    try: asyncio.run(start_services())
+    except: pass
