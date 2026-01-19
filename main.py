@@ -3,6 +3,7 @@ import asyncio
 import logging
 import aiohttp
 import time
+import re
 from datetime import datetime
 from pyrogram import Client, enums
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -122,17 +123,17 @@ PLAYER_HTML = """
     <title>Streaming: {filename}</title>
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <style>
-        body {{ margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; }}
-        .container {{ width: 100%; max-width: 900px; padding: 10px; }}
-        .info {{ color: #fff; padding: 15px 0; text-align: center; }}
-        h2 {{ margin: 5px 0; font-size: 18px; color: #00bfff; }}
+        body {{ margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; overflow: hidden; }}
+        .container {{ width: 100%; max-width: 1000px; padding: 0; position: relative; }}
+        .info {{ position: absolute; top: -50px; left: 0; width: 100%; color: #fff; text-align: center; }}
+        h2 {{ margin: 5px 0; font-size: 16px; color: #00bfff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .plyr {{ border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="info">
             <h2>{filename}</h2>
-            <small>Direct Stream Powered by WDG Bot</small>
         </div>
         <video id="player" playsinline controls data-poster="">
             <source src="{file_url}" type="{mime}" />
@@ -143,6 +144,7 @@ PLAYER_HTML = """
         const player = new Plyr('#player', {{
             controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'],
             settings: ['captions', 'quality', 'speed', 'loop'],
+            tooltips: {{ controls: true, seek: true }},
             speed: {{ selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }}
         }});
     </script>
@@ -150,26 +152,63 @@ PLAYER_HTML = """
 </html>
 """
 
-async def handle_dl(request):
-    """Direct Download Handler"""
+async def stream_handler(request):
+    """Core Streaming Logic supporting Range Requests (Seeking Fix)"""
     mid = int(request.match_info['id'])
+    is_dl = request.path.startswith("/dl")
+    
     msg = await app.get_messages(LOG_CHANNEL, mid)
-    if not msg or not msg.media: return web.Response(status=404)
-    name, size, mime = get_file_info(msg)
-    res = web.StreamResponse(status=200, headers={{'Content-Type': mime, 'Content-Disposition': f'attachment; filename="{name}"', 'Content-Length': str(size), 'Accept-Ranges': 'bytes'}})
-    await res.prepare(request)
-    async for chunk in app.stream_media(msg): await res.write(chunk)
-    return res
+    if not msg or not msg.media:
+        return web.Response(status=404, text="File Not Found")
 
-async def handle_file_stream(request):
-    """Raw data stream for the player"""
-    mid = int(request.match_info['id'])
-    msg = await app.get_messages(LOG_CHANNEL, mid)
-    if not msg or not msg.media: return web.Response(status=404)
     name, size, mime = get_file_info(msg)
-    res = web.StreamResponse(status=200, headers={{'Content-Type': mime, 'Content-Disposition': 'inline', 'Content-Length': str(size), 'Accept-Ranges': 'bytes'}})
+    
+    range_header = request.headers.get("Range")
+    start = 0
+    end = size - 1
+
+    if range_header:
+        # Match "bytes=start-end"
+        match = re.search(r'bytes=(\d+)-(\d*)', range_header)
+        if match:
+            start = int(match.group(1))
+            if match.group(2):
+                end = int(match.group(2))
+    
+    # Calculate chunk size
+    chunk_size = (end - start) + 1
+    
+    headers = {
+        'Content-Type': mime,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': str(chunk_size),
+        'Content-Range': f'bytes {start}-{end}/{size}',
+    }
+
+    if is_dl:
+        headers['Content-Disposition'] = f'attachment; filename="{name}"'
+    else:
+        headers['Content-Disposition'] = f'inline; filename="{name}"'
+
+    # 206 Partial Content is required for seeking/fast loading
+    res = web.StreamResponse(status=206 if range_header else 200, headers=headers)
     await res.prepare(request)
-    async for chunk in app.stream_media(msg): await res.write(chunk)
+    
+    try:
+        # We start the stream from the requested offset
+        async for chunk in app.stream_media(msg, offset=start):
+            if not chunk:
+                break
+            await res.write(chunk)
+            # If we've reached the end of the requested range, stop
+            start += len(chunk)
+            if start > end:
+                break
+    except ConnectionResetError:
+        pass
+    except Exception as e:
+        logger.error(f"Stream Error: {e}")
+    
     return res
 
 async def handle_player(request):
@@ -178,7 +217,6 @@ async def handle_player(request):
     msg = await app.get_messages(LOG_CHANNEL, mid)
     if not msg: return web.Response(text="File not found")
     name, _, mime = get_file_info(msg)
-    # The player source points to the raw data endpoint
     file_url = f"{APP_URL}/file/{mid}"
     return web.Response(text=PLAYER_HTML.format(filename=name, file_url=file_url, mime=mime), content_type='text/html')
 
@@ -187,10 +225,12 @@ async def start_services():
     try: await app.get_chat(LOG_CHANNEL)
     except: pass
     server = web.Application()
-    server.router.add_get('/dl/{id}', handle_dl)
+    # Updated routes to use the unified high-speed stream_handler
+    server.router.add_get('/dl/{id}', stream_handler)
     server.router.add_get('/stream/{id}', handle_player)
-    server.router.add_get('/file/{id}', handle_file_stream)
-    server.router.add_get('/', lambda r: web.Response(text="Bot Active"))
+    server.router.add_get('/file/{id}', stream_handler)
+    server.router.add_get('/', lambda r: web.Response(text="WDG Streamer Active"))
+    
     runner = web.AppRunner(server)
     await runner.setup()
     await web.TCPSite(runner, '0.0.0.0', PORT).start()
