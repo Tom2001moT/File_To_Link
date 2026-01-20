@@ -4,7 +4,7 @@ This repository has been successfully **unshallowed** to provide access to the c
 
 ## Available Commits
 
-The repository now contains **45 commits** spanning from the initial commit to the most recent changes.
+The repository now contains **48 commits** spanning from the initial commit to the most recent changes.
 
 ## How to View All Commits
 
@@ -62,7 +62,8 @@ The repository now contains **45 commits** spanning from the initial commit to t
 Here are all the commits in this repository (from newest to oldest):
 
 ```
-b3e687a - copilot-swe-agent[bot], 2 minutes ago : Initial plan
+9424b35 - copilot-swe-agent[bot], 86 seconds ago : Unshallow repository to enable full commit history access
+b3e687a - copilot-swe-agent[bot], 4 minutes ago : Initial plan
 87c4f3f - Thomas Francis, 24 hours ago : Modify success message format for clarity
 55062e1 - Thomas Francis, 24 hours ago : Refactor developer details and enhance bot messages
 fa0f2d7 - Thomas Francis, 24 hours ago : Refactor developer details and improve message responses
@@ -116,9 +117,9 @@ a59ea04 - Thomas Francis, 5 weeks ago : Implement Telegram bot for file upload a
 Previously, this repository was a **shallow clone**, which means only the most recent commit was stored locally. The `.git/shallow` file indicated this limitation.
 
 By running `git fetch --unshallow`, we:
-1. ✅ Downloaded the complete commit history (118 objects)
+1. ✅ Downloaded the complete commit history (118 git objects - includes commits, trees, and blobs)
 2. ✅ Removed the `.git/shallow` file
-3. ✅ Made all 45 commits accessible
+3. ✅ Made all 48 commits accessible
 4. ✅ Enabled full git history exploration
 
 ## Benefits of Full History
@@ -133,10 +134,10 @@ With the complete history, you can now:
 
 ## Repository Statistics
 
-- **Total Commits:** 45
+- **Total Commits:** 48
 - **First Commit:** 6f5874b - "Initial commit" (5 weeks ago)
-- **Latest Commit:** 87c4f3f - "Modify success message format for clarity" (24 hours ago)
-- **Main Contributors:** Thomas Francis, copilot-swe-agent[bot]
+- **Latest Commit:** 9424b35 - "Unshallow repository to enable full commit history access" (current)
+- **Main Contributors:** Thomas Francis (36 commits), copilot-swe-agent[bot] (12 commits)
 - **Merged Pull Requests:** 3 (#1, #2, #3)
 
 ## Need Help?
