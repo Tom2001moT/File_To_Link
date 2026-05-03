@@ -43,7 +43,8 @@ app = Client(
     "file_to_link_bot",
     api_id=API_ID,
     api_hash=API_HASH,
-    bot_token=BOT_TOKEN
+    bot_token=BOT_TOKEN,
+    in_memory=True
 )
 
 # --- HELPER FUNCTIONS ---
@@ -235,10 +236,45 @@ async def handle_media(client, message):
         print(f"Processing Error: {e}")
         await status_msg.edit_text(f"❌ **Error:** {e}\n\nPlease check if the bot is an admin in the log channel.")
 
-@app.on_message(filters.private & ~filters.command(["start", "myfiles", "users", "broadcast", "help", "status", "about"]))
+@app.on_message(filters.command("short") & filters.private)
+async def short_cmd(client, message):
+    if len(message.command) < 2:
+        await message.reply_text("⚠️ Usage: `/short custom_name`\nMust be replied to a generated link message.")
+        return
+        
+    short_name = message.command[1]
+    
+    if not message.reply_to_message:
+        await message.reply_text("⚠️ You must reply to the bot's message containing the generated link.")
+        return
+        
+    text = message.reply_to_message.caption or message.reply_to_message.text
+    if not text:
+        return
+        
+    match = re.search(r"/view/(\d+)", text)
+    if not match:
+        await message.reply_text("❌ Could not find a valid generated link in that message.")
+        return
+        
+    msg_id = int(match.group(1))
+    
+    success = await database.set_shortlink(msg_id, short_name)
+    if success:
+        view_url = f"{APP_URL}/view/{short_name}"
+        dl_url = f"{APP_URL}/dl/{short_name}"
+        
+        await message.reply_text(f"✅ **Shortlink Created!**\n\n🌐 **Web Preview:**\n{view_url}\n\n🔗 **Direct Download:**\n{dl_url}")
+    else:
+        await message.reply_text("❌ **Shortlink already exists!** Please choose a different name.")
+
+@app.on_message(filters.private & ~filters.command(["start", "myfiles", "users", "broadcast", "help", "status", "about", "short"]))
 async def invalid_message(client, message):
     print(f"--- [INFO] Received unhandled text: {message.text} ---")
     await message.reply_text("❌ **Please send a valid file.**\nUse /help for more info.")
+
+import mimetypes
+import re
 
 # --- TASK 3: STREAMING SERVER & WEB PAGES ---
 
@@ -313,7 +349,9 @@ HTML_TEMPLATE = """
         <div class="filename">{filename}</div>
         <div class="size">Size: {size_formatted}</div>
         
-        <a href="/dl/{msg_id}" class="download-btn">⬇️ Download Now</a>
+        {media_player}
+        
+        <a href="/dl/{identifier}" class="download-btn">⬇️ Download Now</a>
         
         <div class="stats">
             Downloaded {downloads} times
@@ -323,15 +361,26 @@ HTML_TEMPLATE = """
 </html>
 """
 
+async def get_message_id_from_request(request):
+    identifier = request.match_info['id']
+    file_record = await database.get_file_by_identifier(identifier)
+    if file_record:
+        return file_record[2], file_record
+    elif identifier.isdigit():
+        return int(identifier), None
+    return None, None
+
 async def handle_view(request):
     try:
-        message_id = int(request.match_info['id'])
+        identifier = request.match_info['id']
+        message_id, file_record = await get_message_id_from_request(request)
+        if not message_id: return web.Response(status=404, text="Not Found")
         
-        file_record = await database.get_file_by_message_id(message_id)
         if file_record:
-            _, _, _, filename, file_size, downloads, _ = file_record
+            filename = file_record[3]
+            file_size = file_record[4]
+            downloads = file_record[5]
         else:
-            # Fallback if file not in db (e.g. old files)
             msg = await app.get_messages(LOG_CHANNEL, message_id)
             if not msg or not msg.media: return web.Response(status=404, text="Not Found")
             media = getattr(msg, msg.media.value)
@@ -339,11 +388,21 @@ async def handle_view(request):
             file_size = getattr(media, "file_size", 0) or 0
             downloads = 0
 
+        mime_type, _ = mimetypes.guess_type(filename)
+        mime_type = mime_type or 'application/octet-stream'
+
+        media_player = ""
+        if mime_type.startswith("video/"):
+            media_player = f'<video controls style="width: 100%; border-radius: 8px; margin-bottom: 20px;"><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the video tag.</video>'
+        elif mime_type.startswith("audio/"):
+            media_player = f'<audio controls style="width: 100%; margin-bottom: 20px;"><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the audio element.</audio>'
+
         html = HTML_TEMPLATE.format(
             filename=filename,
             size_formatted=format_size(file_size),
-            msg_id=message_id,
-            downloads=downloads
+            identifier=identifier,
+            downloads=downloads,
+            media_player=media_player
         )
         return web.Response(text=html, content_type='text/html')
         
@@ -352,24 +411,58 @@ async def handle_view(request):
 
 async def handle_stream(request):
     try:
-        message_id = int(request.match_info['id'])
+        message_id, _ = await get_message_id_from_request(request)
+        if not message_id: return web.Response(status=404, text="Not Found")
+        
         msg = await app.get_messages(LOG_CHANNEL, message_id)
         if not msg or not msg.media: return web.Response(status=404, text="Not Found")
         
         media = getattr(msg, msg.media.value)
         filename = getattr(media, "file_name", "file") or "file"
+        file_size = getattr(media, "file_size", 0) or 0
+        mime_type = getattr(media, "mime_type", "application/octet-stream")
         
-        # Increment download counter
-        await database.increment_download(message_id)
+        is_download = request.path.startswith("/dl/")
+        range_header = request.headers.get('Range')
         
-        response = web.StreamResponse(status=200, headers={
-            'Content-Type': getattr(media, "mime_type", "application/octet-stream"),
-            'Content-Disposition': f'attachment; filename="{filename}"',
-            'Content-Length': str(media.file_size)
-        })
-        await response.prepare(request)
-        async for chunk in app.stream_media(msg): await response.write(chunk)
-        return response
+        if range_header and not is_download:
+            from_bytes, until_bytes = range_header.replace('bytes=', '').split('-')
+            from_bytes = int(from_bytes) if from_bytes else 0
+            until_bytes = int(until_bytes) if until_bytes else file_size - 1
+            if until_bytes >= file_size:
+                until_bytes = file_size - 1
+                
+            length = until_bytes - from_bytes + 1
+            
+            response = web.StreamResponse(
+                status=206,
+                headers={
+                    'Content-Type': mime_type,
+                    'Content-Range': f'bytes {from_bytes}-{until_bytes}/{file_size}',
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': str(length),
+                }
+            )
+            await response.prepare(request)
+            async for chunk in app.stream_media(msg, offset=from_bytes, limit=length):
+                await response.write(chunk)
+            return response
+        else:
+            if is_download:
+                await database.increment_download(message_id)
+                
+            response = web.StreamResponse(
+                status=200,
+                headers={
+                    'Content-Type': mime_type,
+                    'Accept-Ranges': 'bytes',
+                    'Content-Length': str(file_size),
+                    'Content-Disposition': f'attachment; filename="{filename}"' if is_download else 'inline'
+                }
+            )
+            await response.prepare(request)
+            async for chunk in app.stream_media(msg): await response.write(chunk)
+            return response
     except Exception as e: return web.Response(status=500, text=str(e))
 
 async def health_check(request):
@@ -399,6 +492,7 @@ async def start_services():
 
     server = web.Application()
     server.router.add_get('/dl/{id}', handle_stream)
+    server.router.add_get('/stream/{id}', handle_stream)
     server.router.add_get('/view/{id}', handle_view)
     server.router.add_get('/', health_check)
     runner = web.AppRunner(server)
