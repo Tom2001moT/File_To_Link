@@ -287,6 +287,7 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download {filename} - FileToLink</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300f2fe'/%3E%3Cstop offset='1' stop-color='%23d946ef'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='%23030408'/%3E%3Cpath d='M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 3v6l5-3-5-3z' fill='url(%23g)'/%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
@@ -317,7 +318,7 @@ HTML_TEMPLATE = """
             margin: 0;
             color: var(--text-main);
             overflow-x: hidden;
-            padding: 20px;
+            padding: 40px 20px;
             box-sizing: border-box;
         }}
 
@@ -386,17 +387,57 @@ HTML_TEMPLATE = """
             opacity: 0.8;
         }}
 
+        /* LOGO STYLES */
+        .logo-container {{
+            margin-bottom: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }}
+        .main-logo {{
+            width: 72px;
+            height: 72px;
+            margin-bottom: 10px;
+        }}
+        .logo-ring-outer {{
+            transform-origin: center;
+            animation: cyberSpin 12s linear infinite;
+        }}
+        @keyframes cyberSpin {{
+            from {{ transform: rotate(0deg); }}
+            to {{ transform: rotate(360deg); }}
+        }}
+        .logo-title {{
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.3));
+        }}
+        .logo-subtitle {{
+            font-size: 9px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 4px;
+        }}
+
         .file-icon-wrapper {{
             position: relative;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            width: 88px;
-            height: 88px;
+            width: 80px;
+            height: 80px;
             background: rgba(0, 242, 254, 0.08);
             border: 1px solid rgba(0, 242, 254, 0.2);
             border-radius: 20px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1);
             animation: pulseGlow 3s infinite ease-in-out;
         }}
@@ -407,7 +448,7 @@ HTML_TEMPLATE = """
         }}
 
         .file-icon {{
-            font-size: 40px;
+            font-size: 36px;
             filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
         }}
 
@@ -415,16 +456,16 @@ HTML_TEMPLATE = """
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(0, 242, 254, 0.1);
-            border: 1px solid rgba(0, 242, 254, 0.2);
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.15);
             color: var(--primary);
             padding: 6px 14px;
             border-radius: 50px;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }}
         .status-dot {{
             width: 6px;
@@ -441,7 +482,7 @@ HTML_TEMPLATE = """
 
         .filename {{
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 20px;
+            font-size: 19px;
             font-weight: 700;
             line-height: 1.4;
             color: var(--text-main);
@@ -454,7 +495,7 @@ HTML_TEMPLATE = """
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }}
         .meta-item {{
             background: rgba(255, 255, 255, 0.02);
@@ -477,7 +518,7 @@ HTML_TEMPLATE = """
         }}
 
         .media-container {{
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             border-radius: 16px;
             overflow: hidden;
             background: #000;
@@ -542,7 +583,7 @@ HTML_TEMPLATE = """
         }}
 
         .stats {{
-            margin-top: 24px;
+            margin-top: 20px;
             font-size: 12px;
             color: var(--text-muted);
             letter-spacing: 0.5px;
@@ -557,21 +598,124 @@ HTML_TEMPLATE = """
             fill: currentColor;
         }}
 
+        /* DEVELOPER BLUEPRINT CARD */
+        .dev-section {{
+            margin-top: 32px;
+            border-top: 1px dashed rgba(0, 242, 254, 0.15);
+            padding-top: 24px;
+            text-align: left;
+        }}
+        .dev-title {{
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        .dev-title::before {{
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            border-radius: 50%;
+        }}
+        .dev-profile-link {{
+            text-decoration: none;
+            display: block;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 12px 16px;
+            transition: all 0.3s ease;
+        }}
+        .dev-profile-link:hover {{
+            background: rgba(0, 242, 254, 0.03);
+            border-color: rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);
+            transform: translateY(-1px);
+        }}
+        .dev-content {{
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }}
+        .dev-avatar {{
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: #111;
+            transition: border-color 0.3s ease;
+        }}
+        .dev-profile-link:hover .dev-avatar {{
+            border-color: var(--primary);
+        }}
+        .dev-info {{
+            flex: 1;
+            min-width: 0;
+        }}
+        .dev-name {{
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2px;
+        }}
+        .dev-bio {{
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }}
+        .dev-followers {{
+            font-size: 10px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: 3px;
+        }}
+        .dev-arrow {{
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            transition: transform 0.3s ease, color 0.3s ease;
+        }}
+        .dev-profile-link:hover .dev-arrow {{
+            transform: translateX(4px);
+            color: var(--primary);
+        }}
+        .dev-arrow svg {{
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
+        }}
+
         @media (max-width: 480px) {{
             .card {{
                 padding: 30px 20px;
                 border-radius: 20px;
             }}
             .filename {{
-                font-size: 18px;
+                font-size: 17px;
             }}
             .file-icon-wrapper {{
-                width: 76px;
-                height: 76px;
+                width: 70px;
+                height: 70px;
                 border-radius: 16px;
             }}
             .file-icon {{
-                font-size: 34px;
+                font-size: 30px;
             }}
             .download-btn {{
                 padding: 14px 20px;
@@ -584,6 +728,34 @@ HTML_TEMPLATE = """
     <div class="glow-sphere glow-sphere-1"></div>
     <div class="glow-sphere glow-sphere-2"></div>
     <div class="card">
+        <!-- Dynamic Spinning Cyber Logo -->
+        <div class="logo-container">
+            <svg class="main-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <defs>
+                    <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#00f2fe" />
+                        <stop offset="100%" stop-color="#d946ef" />
+                    </linearGradient>
+                    <filter id="cyber-glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="6" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+                </defs>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="url(#logo-grad)" stroke-width="2.5" stroke-dasharray="200 60" class="logo-ring-outer" />
+                <circle cx="50" cy="50" r="34" fill="none" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1.5" />
+                <g filter="url(#cyber-glow)">
+                    <path d="M38 42 A 12 12 0 0 1 62 42" fill="none" stroke="url(#logo-grad)" stroke-width="4.5" stroke-linecap="round" />
+                    <path d="M62 58 A 12 12 0 0 1 38 58" fill="none" stroke="url(#logo-grad)" stroke-width="4.5" stroke-linecap="round" />
+                    <polygon points="46,45 58,50 46,55" fill="url(#logo-grad)" />
+                </g>
+            </svg>
+            <div class="logo-title">FileToLink</div>
+            <div class="logo-subtitle">SECURE CLOUD ENGINE</div>
+        </div>
+
         <div class="status-badge">
             <span class="status-dot"></span>
             Direct Stream Active
@@ -617,7 +789,45 @@ HTML_TEMPLATE = """
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
             Permanent high-speed direct link
         </div>
+
+        <!-- Dynamic GitHub Developer Blueprint -->
+        <div class="dev-section" id="dev-card">
+            <div class="dev-title">Developer Blueprint</div>
+            <a href="https://github.com/Tom2001moT" target="_blank" class="dev-profile-link">
+                <div class="dev-content">
+                    <img id="dev-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%23111827'/%3E%3Cpath d='M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z' fill='%2394a3b8'/%3E%3C/svg%3E" alt="Avatar" class="dev-avatar">
+                    <div class="dev-info">
+                        <div class="dev-name" id="dev-name">Analyzing GitHub...</div>
+                        <div class="dev-bio" id="dev-bio">Retrieving profile link</div>
+                        <div class="dev-followers" id="dev-followers">--</div>
+                    </div>
+                    <div class="dev-arrow">
+                        <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+                    </div>
+                </div>
+            </a>
+        </div>
     </div>
+
+    <script>
+        async function fetchDevDetails() {{
+            try {{
+                const res = await fetch('https://api.github.com/users/Tom2001moT');
+                if (!res.ok) throw new Error('API Error');
+                const data = await res.json();
+                document.getElementById('dev-avatar').src = data.avatar_url;
+                document.getElementById('dev-name').textContent = data.name || 'Tom';
+                document.getElementById('dev-bio').textContent = data.bio || 'Core Developer';
+                document.getElementById('dev-followers').textContent = `${{data.followers}} Followers`;
+            }} catch (e) {{
+                document.getElementById('dev-avatar').src = 'https://avatars.githubusercontent.com/u/10000000?v=4';
+                document.getElementById('dev-name').textContent = 'Tom2001moT';
+                document.getElementById('dev-bio').textContent = 'System & Bot Developer';
+                document.getElementById('dev-followers').textContent = 'GitHub Developer';
+            }}
+        }}
+        window.addEventListener('DOMContentLoaded', fetchDevDetails);
+    </script>
 </body>
 </html>
 """
