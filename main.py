@@ -460,6 +460,8 @@ async def handle_stream(request):
                 }
             )
             await response.prepare(request)
+            if request.method == 'HEAD':
+                return response
             
             import math
             chunk_size = 1024 * 1024
@@ -500,6 +502,8 @@ async def handle_stream(request):
                 }
             )
             await response.prepare(request)
+            if request.method == 'HEAD':
+                return response
             async for chunk in app.stream_media(msg, offset=0, limit=0):
                 await response.write(chunk)
             return response
