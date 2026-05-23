@@ -44,7 +44,9 @@ app = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    in_memory=True
+    in_memory=True,
+    workers=20,
+    max_concurrent_transmissions=20
 )
 
 # --- HELPER FUNCTIONS ---
