@@ -454,7 +454,9 @@ async def handle_stream(request):
                     'Content-Range': f'bytes {from_bytes}-{until_bytes}/{file_size}',
                     'Accept-Ranges': 'bytes',
                     'Content-Length': str(length),
-                    'Content-Disposition': disposition
+                    'Content-Disposition': disposition,
+                    'X-Accel-Buffering': 'no',
+                    'Cache-Control': 'no-cache, no-transform'
                 }
             )
             await response.prepare(request)
@@ -492,7 +494,9 @@ async def handle_stream(request):
                     'Content-Type': mime_type,
                     'Accept-Ranges': 'bytes',
                     'Content-Length': str(file_size),
-                    'Content-Disposition': disposition
+                    'Content-Disposition': disposition,
+                    'X-Accel-Buffering': 'no',
+                    'Cache-Control': 'no-cache, no-transform'
                 }
             )
             await response.prepare(request)
