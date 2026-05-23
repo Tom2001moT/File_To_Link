@@ -287,76 +287,335 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download {filename} - FileToLink</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+        :root {
+            --bg-color: #030408;
+            --card-bg: rgba(10, 15, 30, 0.65);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --accent: #d946ef;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --glow: 0 0 20px rgba(0, 242, 254, 0.3);
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.06), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(217, 70, 239, 0.06), transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.003) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.003) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 20px 20px, 20px 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            color: #1c1e21;
-        }}
-        .card {{
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 40px;
+            color: var(--text-main);
+            overflow-x: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .glow-sphere {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, transparent 70%);
+            filter: blur(40px);
+            z-index: -1;
+            animation: floatGlow 10s infinite alternate ease-in-out;
+        }
+        .glow-sphere-1 {
+            top: 15%;
+            left: 20%;
+        }
+        .glow-sphere-2 {
+            bottom: 15%;
+            right: 20%;
+            animation-delay: -5s;
+        }
+
+        @keyframes floatGlow {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, -50px) scale(1.2); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 40px 30px;
             width: 100%;
-            max-width: 400px;
+            max-width: 520px;
             text-align: center;
-        }}
-        .icon {{
-            font-size: 60px;
-            margin-bottom: 20px;
-        }}
-        .filename {{
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+        .card:hover::before {
+            opacity: 0.8;
+        }
+
+        .file-icon-wrapper {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 88px;
+            height: 88px;
+            background: rgba(0, 242, 254, 0.08);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            border-radius: 20px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1);
+            animation: pulseGlow 3s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1), 0 0 10px rgba(0, 242, 254, 0.05); }
+            50% { box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.2), 0 0 20px rgba(0, 242, 254, 0.2); border-color: rgba(0, 242, 254, 0.4); }
+        }
+
+        .file-icon {
+            font-size: 40px;
+            filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--primary);
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .filename {
+            font-family: 'Space Grotesk', sans-serif;
             font-size: 20px;
-            font-weight: bold;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--text-main);
             word-break: break-all;
-            margin-bottom: 10px;
-        }}
-        .size {{
-            color: #65676B;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .meta-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .meta-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .meta-value {
             font-size: 14px;
-        }}
-        .download-btn {{
-            display: inline-block;
-            background-color: #1877f2;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 6px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .media-container {
+            margin-bottom: 28px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+        video, audio {
+            display: block;
+            width: 100%;
+            outline: none;
+        }
+        audio {
+            background: #0d111b;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #030408;
+            padding: 16px 28px;
+            border-radius: 14px;
             text-decoration: none;
-            font-weight: bold;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
             font-size: 16px;
-            transition: background-color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             width: 100%;
             box-sizing: border-box;
-        }}
-        .download-btn:hover {{
-            background-color: #166fe5;
-        }}
-        .stats {{
-            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
+            background: linear-gradient(135deg, #00f2fe, #d946ef);
+            color: #fff;
+        }
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+        .download-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -60%; width: 20%; height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(30deg);
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+        .download-btn:hover::after {
+            left: 120%;
+            opacity: 1;
+        }
+
+        .stats {
+            margin-top: 24px;
             font-size: 12px;
-            color: #888;
-        }}
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .stats svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 30px 20px;
+                border-radius: 20px;
+            }
+            .filename {
+                font-size: 18px;
+            }
+            .file-icon-wrapper {
+                width: 76px;
+                height: 76px;
+                border-radius: 16px;
+            }
+            .file-icon {
+                font-size: 34px;
+            }
+            .download-btn {
+                padding: 14px 20px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="glow-sphere glow-sphere-1"></div>
+    <div class="glow-sphere glow-sphere-2"></div>
     <div class="card">
-        <div class="icon">📁</div>
-        <div class="filename">{filename}</div>
-        <div class="size">Size: {size_formatted}</div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Direct Stream Active
+        </div>
         
+        <div class="file-icon-wrapper">
+            <span class="file-icon">{icon}</span>
+        </div>
+        
+        <div class="filename">{filename}</div>
+        
+        <div class="meta-grid">
+            <div class="meta-item">
+                <div class="meta-label">File Size</div>
+                <div class="meta-value">{size_formatted}</div>
+            </div>
+            <div class="meta-item">
+                <div class="meta-label">Downloads</div>
+                <div class="meta-value">{downloads}</div>
+            </div>
+        </div>
+
         {media_player}
         
-        <a href="/dl/{identifier}" class="download-btn">⬇️ Download Now</a>
+        <a href="/dl/{identifier}" class="download-btn">
+            <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Download Now
+        </a>
         
         <div class="stats">
-            Downloaded {downloads} times
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Permanent high-speed direct link
         </div>
     </div>
 </body>
@@ -393,18 +652,32 @@ async def handle_view(request):
         mime_type, _ = mimetypes.guess_type(filename)
         mime_type = mime_type or 'application/octet-stream'
 
+        lower_filename = filename.lower()
+        icon = "📁"
+        if mime_type.startswith("video/") or any(ext in lower_filename for ext in [".mp4", ".mkv", ".avi", ".mov", ".webm"]):
+            icon = "🎥"
+        elif mime_type.startswith("audio/") or any(ext in lower_filename for ext in [".mp3", ".wav", ".flac", ".m4a", ".ogg"]):
+            icon = "🎵"
+        elif mime_type.startswith("image/"):
+            icon = "🖼️"
+        elif any(ext in lower_filename for ext in [".zip", ".rar", ".7z", ".tar", ".gz"]):
+            icon = "📦"
+        elif ".pdf" in lower_filename:
+            icon = "📕"
+
         media_player = ""
-        if mime_type.startswith("video/"):
-            media_player = f'<video controls style="width: 100%; border-radius: 8px; margin-bottom: 20px;"><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the video tag.</video>'
-        elif mime_type.startswith("audio/"):
-            media_player = f'<audio controls style="width: 100%; margin-bottom: 20px;"><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the audio element.</audio>'
+        if mime_type.startswith("video/") or any(ext in lower_filename for ext in [".mp4", ".mkv", ".avi", ".mov", ".webm"]):
+            media_player = f'<div class="media-container"><video controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the video tag.</video></div>'
+        elif mime_type.startswith("audio/") or any(ext in lower_filename for ext in [".mp3", ".wav", ".flac", ".m4a", ".ogg"]):
+            media_player = f'<div class="media-container"><audio controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the audio element.</audio></div>'
 
         html = HTML_TEMPLATE.format(
             filename=filename,
             size_formatted=format_size(file_size),
             identifier=identifier,
             downloads=downloads,
-            media_player=media_player
+            media_player=media_player,
+            icon=icon
         )
         return web.Response(text=html, content_type='text/html')
         
