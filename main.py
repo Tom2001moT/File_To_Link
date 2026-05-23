@@ -289,7 +289,7 @@ HTML_TEMPLATE = """
     <title>Download {filename} - FileToLink</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
+        :root {{
             --bg-color: #030408;
             --card-bg: rgba(10, 15, 30, 0.65);
             --border-color: rgba(255, 255, 255, 0.08);
@@ -299,9 +299,9 @@ HTML_TEMPLATE = """
             --text-main: #ffffff;
             --text-muted: #94a3b8;
             --glow: 0 0 20px rgba(0, 242, 254, 0.3);
-        }
+        }}
         
-        body {
+        body {{
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             background-image: 
@@ -319,9 +319,9 @@ HTML_TEMPLATE = """
             overflow-x: hidden;
             padding: 20px;
             box-sizing: border-box;
-        }
+        }}
 
-        .glow-sphere {
+        .glow-sphere {{
             position: absolute;
             width: 250px;
             height: 250px;
@@ -330,23 +330,23 @@ HTML_TEMPLATE = """
             filter: blur(40px);
             z-index: -1;
             animation: floatGlow 10s infinite alternate ease-in-out;
-        }
-        .glow-sphere-1 {
+        }}
+        .glow-sphere-1 {{
             top: 15%;
             left: 20%;
-        }
-        .glow-sphere-2 {
+        }}
+        .glow-sphere-2 {{
             bottom: 15%;
             right: 20%;
             animation-delay: -5s;
-        }
+        }}
 
-        @keyframes floatGlow {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(50px, -50px) scale(1.2); }
-        }
+        @keyframes floatGlow {{
+            0% {{ transform: translate(0, 0) scale(1); }}
+            100% {{ transform: translate(50px, -50px) scale(1.2); }}
+        }}
 
-        .card {
+        .card {{
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 24px;
@@ -361,14 +361,14 @@ HTML_TEMPLATE = """
             position: relative;
             overflow: hidden;
             animation: fadeIn 0.6s ease-out;
-        }
+        }}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn {{
+            from {{ opacity: 0; transform: translateY(20px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
 
-        .card::before {
+        .card::before {{
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -381,12 +381,12 @@ HTML_TEMPLATE = """
             pointer-events: none;
             opacity: 0.4;
             transition: opacity 0.3s ease;
-        }
-        .card:hover::before {
+        }}
+        .card:hover::before {{
             opacity: 0.8;
-        }
+        }}
 
-        .file-icon-wrapper {
+        .file-icon-wrapper {{
             position: relative;
             display: inline-flex;
             justify-content: center;
@@ -399,19 +399,19 @@ HTML_TEMPLATE = """
             margin-bottom: 24px;
             box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1);
             animation: pulseGlow 3s infinite ease-in-out;
-        }
+        }}
 
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1), 0 0 10px rgba(0, 242, 254, 0.05); }
-            50% { box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.2), 0 0 20px rgba(0, 242, 254, 0.2); border-color: rgba(0, 242, 254, 0.4); }
-        }
+        @keyframes pulseGlow {{
+            0%, 100% {{ box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1), 0 0 10px rgba(0, 242, 254, 0.05); }}
+            50% {{ box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.2), 0 0 20px rgba(0, 242, 254, 0.2); border-color: rgba(0, 242, 254, 0.4); }}
+        }}
 
-        .file-icon {
+        .file-icon {{
             font-size: 40px;
             filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
-        }
+        }}
 
-        .status-badge {
+        .status-badge {{
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -425,21 +425,21 @@ HTML_TEMPLATE = """
             letter-spacing: 1.5px;
             font-weight: 700;
             margin-bottom: 16px;
-        }
-        .status-dot {
+        }}
+        .status-dot {{
             width: 6px;
             height: 6px;
             background-color: var(--primary);
             border-radius: 50%;
             box-shadow: 0 0 8px var(--primary);
             animation: blink 1.5s infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
+        }}
+        @keyframes blink {{
+            0%, 100% {{ opacity: 0.3; }}
+            50% {{ opacity: 1; }}
+        }}
 
-        .filename {
+        .filename {{
             font-family: 'Space Grotesk', sans-serif;
             font-size: 20px;
             font-weight: 700;
@@ -448,35 +448,35 @@ HTML_TEMPLATE = """
             word-break: break-all;
             margin-bottom: 20px;
             padding: 0 10px;
-        }
+        }}
 
-        .meta-grid {
+        .meta-grid {{
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-bottom: 28px;
-        }
-        .meta-item {
+        }}
+        .meta-item {{
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             padding: 12px;
             text-align: center;
-        }
-        .meta-label {
+        }}
+        .meta-label {{
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
             margin-bottom: 4px;
-        }
-        .meta-value {
+        }}
+        .meta-value {{
             font-size: 14px;
             font-weight: 600;
             color: var(--text-main);
-        }
+        }}
 
-        .media-container {
+        .media-container {{
             margin-bottom: 28px;
             border-radius: 16px;
             overflow: hidden;
@@ -484,19 +484,19 @@ HTML_TEMPLATE = """
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
             position: relative;
-        }
-        video, audio {
+        }}
+        video, audio {{
             display: block;
             width: 100%;
             outline: none;
-        }
-        audio {
+        }}
+        audio {{
             background: #0d111b;
             padding: 10px;
             box-sizing: border-box;
-        }
+        }}
 
-        .download-btn {
+        .download-btn {{
             display: flex;
             align-items: center;
             justify-content: center;
@@ -517,17 +517,17 @@ HTML_TEMPLATE = """
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
             position: relative;
             overflow: hidden;
-        }
-        .download-btn:hover {
+        }}
+        .download-btn:hover {{
             transform: translateY(-2px);
             box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
             background: linear-gradient(135deg, #00f2fe, #d946ef);
             color: #fff;
-        }
-        .download-btn:active {
+        }}
+        .download-btn:active {{
             transform: translateY(1px);
-        }
-        .download-btn::after {
+        }}
+        .download-btn::after {{
             content: '';
             position: absolute;
             top: -50%; left: -60%; width: 20%; height: 200%;
@@ -535,13 +535,13 @@ HTML_TEMPLATE = """
             transform: rotate(30deg);
             transition: all 0.5s ease;
             opacity: 0;
-        }
-        .download-btn:hover::after {
+        }}
+        .download-btn:hover::after {{
             left: 120%;
             opacity: 1;
-        }
+        }}
 
-        .stats {
+        .stats {{
             margin-top: 24px;
             font-size: 12px;
             color: var(--text-muted);
@@ -550,34 +550,34 @@ HTML_TEMPLATE = """
             align-items: center;
             justify-content: center;
             gap: 6px;
-        }
-        .stats svg {
+        }}
+        .stats svg {{
             width: 14px;
             height: 14px;
             fill: currentColor;
-        }
+        }}
 
-        @media (max-width: 480px) {
-            .card {
+        @media (max-width: 480px) {{
+            .card {{
                 padding: 30px 20px;
                 border-radius: 20px;
-            }
-            .filename {
+            }}
+            .filename {{
                 font-size: 18px;
-            }
-            .file-icon-wrapper {
+            }}
+            .file-icon-wrapper {{
                 width: 76px;
                 height: 76px;
                 border-radius: 16px;
-            }
-            .file-icon {
+            }}
+            .file-icon {{
                 font-size: 34px;
-            }
-            .download-btn {
+            }}
+            .download-btn {{
                 padding: 14px 20px;
                 font-size: 14px;
-            }
-        }
+            }}
+        }}
     </style>
 </head>
 <body>
