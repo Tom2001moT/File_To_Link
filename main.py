@@ -458,8 +458,32 @@ async def handle_stream(request):
                 }
             )
             await response.prepare(request)
-            async for chunk in app.stream_media(msg, offset=from_bytes, limit=length):
-                await response.write(chunk)
+            
+            import math
+            chunk_size = 1024 * 1024
+            offset_chunks = from_bytes // chunk_size
+            limit_chunks = math.ceil((until_bytes + 1) / chunk_size) - offset_chunks
+            
+            current_byte_offset = offset_chunks * chunk_size
+            bytes_to_send = length
+            bytes_sent = 0
+            
+            async for chunk in app.stream_media(msg, offset=offset_chunks, limit=limit_chunks):
+                chunk_len = len(chunk)
+                chunk_start = current_byte_offset
+                chunk_end = current_byte_offset + chunk_len - 1
+                
+                if chunk_end >= from_bytes and chunk_start <= until_bytes:
+                    slice_start = max(0, from_bytes - chunk_start)
+                    slice_end = min(chunk_len, until_bytes - chunk_start + 1)
+                    
+                    sliced_chunk = chunk[slice_start:slice_end]
+                    await response.write(sliced_chunk)
+                    bytes_sent += len(sliced_chunk)
+                    if bytes_sent >= bytes_to_send:
+                        break
+                        
+                current_byte_offset += chunk_len
             return response
         else:
             response = web.StreamResponse(
@@ -472,7 +496,7 @@ async def handle_stream(request):
                 }
             )
             await response.prepare(request)
-            async for chunk in app.stream_media(msg, offset=0, limit=file_size):
+            async for chunk in app.stream_media(msg, offset=0, limit=0):
                 await response.write(chunk)
             return response
     except Exception as e:
