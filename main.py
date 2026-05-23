@@ -425,7 +425,20 @@ async def handle_stream(request):
         is_download = request.path.startswith("/dl/")
         range_header = request.headers.get('Range')
         
-        if range_header and not is_download:
+        # Prepare Content-Disposition safely to support Unicode filenames and prevent crashes in aiohttp
+        import urllib.parse
+        safe_filename = filename.encode('ascii', 'ignore').decode('ascii').strip()
+        if not safe_filename:
+            safe_filename = "file"
+        safe_filename = safe_filename.replace('"', '\\"')
+        filename_utf8 = urllib.parse.quote(filename)
+        
+        disposition = 'inline'
+        if is_download:
+            disposition = f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'{filename_utf8}'
+            await database.increment_download(message_id)
+            
+        if range_header:
             from_bytes, until_bytes = range_header.replace('bytes=', '').split('-')
             from_bytes = int(from_bytes) if from_bytes else 0
             until_bytes = int(until_bytes) if until_bytes else file_size - 1
@@ -441,6 +454,7 @@ async def handle_stream(request):
                     'Content-Range': f'bytes {from_bytes}-{until_bytes}/{file_size}',
                     'Accept-Ranges': 'bytes',
                     'Content-Length': str(length),
+                    'Content-Disposition': disposition
                 }
             )
             await response.prepare(request)
@@ -448,22 +462,25 @@ async def handle_stream(request):
                 await response.write(chunk)
             return response
         else:
-            if is_download:
-                await database.increment_download(message_id)
-                
             response = web.StreamResponse(
                 status=200,
                 headers={
                     'Content-Type': mime_type,
                     'Accept-Ranges': 'bytes',
                     'Content-Length': str(file_size),
-                    'Content-Disposition': f'attachment; filename="{filename}"' if is_download else 'inline'
+                    'Content-Disposition': disposition
                 }
             )
             await response.prepare(request)
-            async for chunk in app.stream_media(msg): await response.write(chunk)
+            async for chunk in app.stream_media(msg, offset=0, limit=file_size):
+                await response.write(chunk)
             return response
-    except Exception as e: return web.Response(status=500, text=str(e))
+    except Exception as e:
+        logger.error(f"Error streaming/downloading media: {e}", exc_info=True)
+        try:
+            return web.Response(status=500, text=str(e))
+        except Exception:
+            raise e
 
 async def health_check(request):
     return web.Response(text=f"Bot is running 24/7\nUptime: {get_uptime()}")

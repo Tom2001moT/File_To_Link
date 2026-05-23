@@ -1,0 +1,19 @@
+# Environments
+.env
+
+# Database
+*.db
+*.db-journal
+
+# Pyrogram Sessions
+*.session
+*.session-journal
+
+# Python caches
+__pycache__/
+*.pyc
+
+# IDEs and editors
+.vscode/
+.idea/
+.DS_Store
