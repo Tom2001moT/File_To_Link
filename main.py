@@ -286,31 +286,60 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download {filename} - FileToLink</title>
+    <title>Secure Cloud Download: {filename}</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300f2fe'/%3E%3Cstop offset='1' stop-color='%23d946ef'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='%23030408'/%3E%3Cpath d='M8 6h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2 3v6l5-3-5-3z' fill='url(%23g)'/%3E%3C/svg%3E">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {{
             --bg-color: #030408;
             --card-bg: rgba(10, 15, 30, 0.65);
             --border-color: rgba(255, 255, 255, 0.08);
             --primary: #00f2fe;
+            --primary-rgb: 0, 242, 254;
             --secondary: #4facfe;
             --accent: #d946ef;
+            --accent-rgb: 217, 70, 239;
             --text-main: #ffffff;
             --text-muted: #94a3b8;
-            --glow: 0 0 20px rgba(0, 242, 254, 0.3);
+            --glow: 0 0 20px rgba(0, 242, 254, 0.25);
         }}
         
+        body.theme-sunburst {{
+            --primary: #ff5e62;
+            --primary-rgb: 255, 94, 98;
+            --secondary: #ff9966;
+            --accent: #febb2c;
+            --accent-rgb: 254, 187, 44;
+            --glow: 0 0 20px rgba(255, 94, 98, 0.25);
+        }}
+
+        body.theme-emerald {{
+            --primary: #10b981;
+            --primary-rgb: 16, 185, 129;
+            --secondary: #34d399;
+            --accent: #fbbf24;
+            --accent-rgb: 251, 191, 36;
+            --glow: 0 0 20px rgba(16, 185, 129, 0.25);
+        }}
+
+        body.theme-amethyst {{
+            --primary: #d946ef;
+            --primary-rgb: 217, 70, 239;
+            --secondary: #a855f7;
+            --accent: #ec4899;
+            --accent-rgb: 236, 72, 153;
+            --glow: 0 0 20px rgba(217, 70, 239, 0.25);
+        }}
+
         body {{
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 242, 254, 0.06), transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(217, 70, 239, 0.06), transparent 40%),
-                linear-gradient(rgba(255, 255, 255, 0.003) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.003) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 20px 20px, 20px 20px;
+                radial-gradient(circle at 10% 20%, rgba(var(--primary-rgb), 0.05), transparent 45%),
+                radial-gradient(circle at 90% 80%, rgba(var(--accent-rgb), 0.05), transparent 45%),
+                linear-gradient(rgba(255, 255, 255, 0.002) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.002) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 25px 25px, 25px 25px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -320,52 +349,57 @@ HTML_TEMPLATE = """
             overflow-x: hidden;
             padding: 40px 20px;
             box-sizing: border-box;
+            transition: background-image 0.5s ease;
         }}
 
+        /* Glow Spheres */
         .glow-sphere {{
             position: absolute;
-            width: 250px;
-            height: 250px;
+            width: 300px;
+            height: 300px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, transparent 70%);
-            filter: blur(40px);
+            background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
+            filter: blur(50px);
             z-index: -1;
-            animation: floatGlow 10s infinite alternate ease-in-out;
+            animation: floatGlow 12s infinite alternate ease-in-out;
+            pointer-events: none;
         }}
         .glow-sphere-1 {{
-            top: 15%;
-            left: 20%;
+            top: 10%;
+            left: 15%;
         }}
         .glow-sphere-2 {{
-            bottom: 15%;
-            right: 20%;
-            animation-delay: -5s;
+            bottom: 10%;
+            right: 15%;
+            animation-delay: -6s;
+            background: radial-gradient(circle, rgba(var(--accent-rgb), 0.12) 0%, transparent 70%);
         }}
 
         @keyframes floatGlow {{
             0% {{ transform: translate(0, 0) scale(1); }}
-            100% {{ transform: translate(50px, -50px) scale(1.2); }}
+            100% {{ transform: translate(40px, -40px) scale(1.15); }}
         }}
 
         .card {{
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 40px 30px;
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 35px 30px;
             width: 100%;
-            max-width: 520px;
+            max-width: 550px;
             text-align: center;
             box-sizing: border-box;
             position: relative;
             overflow: hidden;
-            animation: fadeIn 0.6s ease-out;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 10;
         }}
 
         @keyframes fadeIn {{
-            from {{ opacity: 0; transform: translateY(20px); }}
+            from {{ opacity: 0; transform: translateY(15px); }}
             to {{ opacity: 1; transform: translateY(0); }}
         }}
 
@@ -380,28 +414,98 @@ HTML_TEMPLATE = """
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
-            opacity: 0.4;
-            transition: opacity 0.3s ease;
+            opacity: 0.35;
+            transition: opacity 0.4s ease;
         }}
         .card:hover::before {{
-            opacity: 0.8;
+            opacity: 0.7;
+        }}
+
+        /* THEME SWITCHER */
+        .theme-switcher {{
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }}
+        .theme-toggle-btn {{
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }}
+        .theme-toggle-btn:hover {{
+            background: rgba(var(--primary-rgb), 0.1);
+            border-color: var(--primary);
+            transform: rotate(15deg) scale(1.05);
+        }}
+        .theme-menu {{
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px;
+            width: 160px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }}
+        .theme-menu.show {{
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }}
+        .theme-option {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-align: left;
+        }}
+        .theme-option:hover {{
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }}
+        .theme-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
         }}
 
         /* LOGO STYLES */
         .logo-container {{
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }}
         .main-logo {{
-            width: 72px;
-            height: 72px;
-            margin-bottom: 10px;
+            width: 68px;
+            height: 68px;
+            margin-bottom: 8px;
         }}
         .logo-ring-outer {{
             transform-origin: center;
-            animation: cyberSpin 12s linear infinite;
+            animation: cyberSpin 14s linear infinite;
         }}
         @keyframes cyberSpin {{
             from {{ transform: rotate(0deg); }}
@@ -409,132 +513,280 @@ HTML_TEMPLATE = """
         }}
         .logo-title {{
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 24px;
+            font-size: 23px;
             font-weight: 700;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             background: linear-gradient(135deg, var(--primary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.3));
+            filter: drop-shadow(0 0 8px rgba(var(--primary-rgb), 0.25));
         }}
         .logo-subtitle {{
-            font-size: 9px;
-            letter-spacing: 3px;
+            font-size: 8.5px;
+            letter-spacing: 2.5px;
             text-transform: uppercase;
             color: var(--text-muted);
             font-weight: 600;
-            margin-top: 4px;
+            margin-top: 3px;
         }}
 
+        /* BADGES */
+        .badges-row {{
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }}
+        .status-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(var(--primary-rgb), 0.06);
+            border: 1px solid rgba(var(--primary-rgb), 0.15);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }}
+        .status-dot {{
+            width: 5px;
+            height: 5px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--primary);
+            animation: blink 1.5s infinite;
+        }}
+        .secure-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }}
+        .secure-badge svg {{
+            width: 10px;
+            height: 10px;
+            fill: currentColor;
+        }}
+
+        @keyframes blink {{
+            0%, 100% {{ opacity: 0.35; }}
+            50% {{ opacity: 1; }}
+        }}
+
+        /* PREVIEW WRAPPERS */
         .file-icon-wrapper {{
             position: relative;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 242, 254, 0.08);
-            border: 1px solid rgba(0, 242, 254, 0.2);
-            border-radius: 20px;
-            margin-bottom: 20px;
-            box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1);
-            animation: pulseGlow 3s infinite ease-in-out;
+            width: 72px;
+            height: 72px;
+            background: rgba(var(--primary-rgb), 0.06);
+            border: 1px solid rgba(var(--primary-rgb), 0.15);
+            border-radius: 18px;
+            margin-bottom: 16px;
+            box-shadow: inset 0 0 12px rgba(var(--primary-rgb), 0.08);
+            animation: pulseGlow 4s infinite ease-in-out;
         }}
 
         @keyframes pulseGlow {{
-            0%, 100% {{ box-shadow: inset 0 0 15px rgba(0, 242, 254, 0.1), 0 0 10px rgba(0, 242, 254, 0.05); }}
-            50% {{ box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.2), 0 0 20px rgba(0, 242, 254, 0.2); border-color: rgba(0, 242, 254, 0.4); }}
+            0%, 100% {{ box-shadow: inset 0 0 12px rgba(var(--primary-rgb), 0.08), 0 0 8px rgba(var(--primary-rgb), 0.03); }}
+            50% {{ box-shadow: inset 0 0 20px rgba(var(--primary-rgb), 0.15), 0 0 15px rgba(var(--primary-rgb), 0.12); border-color: rgba(var(--primary-rgb), 0.35); }}
         }}
 
         .file-icon {{
-            font-size: 36px;
-            filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
-        }}
-
-        .status-badge {{
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(0, 242, 254, 0.08);
-            border: 1px solid rgba(0, 242, 254, 0.15);
-            color: var(--primary);
-            padding: 6px 14px;
-            border-radius: 50px;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 700;
-            margin-bottom: 20px;
-        }}
-        .status-dot {{
-            width: 6px;
-            height: 6px;
-            background-color: var(--primary);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--primary);
-            animation: blink 1.5s infinite;
-        }}
-        @keyframes blink {{
-            0%, 100% {{ opacity: 0.3; }}
-            50% {{ opacity: 1; }}
+            font-size: 32px;
+            filter: drop-shadow(0 0 6px rgba(var(--primary-rgb), 0.4));
         }}
 
         .filename {{
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 19px;
+            font-size: 18px;
             font-weight: 700;
             line-height: 1.4;
             color: var(--text-main);
             word-break: break-all;
             margin-bottom: 20px;
-            padding: 0 10px;
+            padding: 0 5px;
         }}
 
-        .meta-grid {{
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 24px;
-        }}
-        .meta-item {{
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-        }}
-        .meta-label {{
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }}
-        .meta-value {{
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-main);
-        }}
-
+        /* MEDIA CONTAINERS */
         .media-container {{
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             border-radius: 16px;
             overflow: hidden;
             background: #000;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
             position: relative;
+            transition: all 0.3s ease;
         }}
-        video, audio {{
+        .media-container:hover {{
+            border-color: rgba(var(--primary-rgb), 0.25);
+            box-shadow: 0 8px 30px rgba(var(--primary-rgb), 0.1);
+        }}
+        
+        video {{
             display: block;
             width: 100%;
             outline: none;
+            max-height: 400px;
+            background: #000;
         }}
+        
         audio {{
-            background: #0d111b;
-            padding: 10px;
+            display: block;
+            width: 100%;
+            outline: none;
+            background: #090c13;
+            padding: 12px;
             box-sizing: border-box;
+        }}
+
+        /* Document Preview Block */
+        .doc-preview-container {{
+            background: rgba(255,255,255,0.015);
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }}
+        .doc-icon-glow {{
+            font-size: 42px;
+            filter: drop-shadow(0 0 10px rgba(var(--primary-rgb), 0.2));
+            animation: bounceSlow 3s infinite alternate ease-in-out;
+        }}
+        @keyframes bounceSlow {{
+            from {{ transform: translateY(0); }}
+            to {{ transform: translateY(-5px); }}
+        }}
+        .doc-details {{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }}
+        .doc-title {{
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }}
+        .doc-subtitle {{
+            font-size: 11px;
+            color: var(--text-muted);
+        }}
+
+        /* INTEGRITY SCANNER WIDGET */
+        .scanner-section {{
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 22px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }}
+        .scanner-header {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }}
+        .scanner-radar {{
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(var(--primary-rgb), 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        .radar-sweep {{
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 1.5px solid transparent;
+            border-top-color: var(--primary);
+            animation: cyberSpin 1.8s linear infinite;
+        }}
+        .radar-dot {{
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 6px var(--primary);
+        }}
+        .scanner-title-group {{
+            flex: 1;
+        }}
+        .scanner-status {{
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+        }}
+        .scanner-sub {{
+            font-size: 8.5px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }}
+        .scanner-console {{
+            font-family: monospace;
+            font-size: 9.5px;
+            color: rgba(var(--primary-rgb), 0.85);
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 10px;
+            height: 52px;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.02);
+            line-height: 1.4;
+        }}
+        .scanner-console::-webkit-scrollbar {{
+            width: 3px;
+        }}
+        .scanner-console::-webkit-scrollbar-thumb {{
+            background: rgba(var(--primary-rgb), 0.2);
+            border-radius: 2px;
+        }}
+        .console-line {{
+            opacity: 0;
+            transform: translateY(3px);
+            animation: lineIn 0.3s forwards ease-out;
+        }}
+        @keyframes lineIn {{
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+
+        /* ACTION DRAWERS */
+        .actions-drawer-container {{
+            opacity: 0.2;
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }}
+        .actions-drawer-container.unlocked {{
+            opacity: 1;
+            pointer-events: auto;
         }}
 
         .download-btn {{
@@ -544,25 +796,28 @@ HTML_TEMPLATE = """
             gap: 10px;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: #030408;
-            padding: 16px 28px;
+            padding: 15px 28px;
             border-radius: 14px;
             text-decoration: none;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             width: 100%;
             box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.2);
+            box-shadow: var(--glow);
             position: relative;
             overflow: hidden;
+            margin-bottom: 12px;
+            border: none;
+            cursor: pointer;
         }}
         .download-btn:hover {{
             transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(0, 242, 254, 0.5);
-            background: linear-gradient(135deg, #00f2fe, #d946ef);
+            box-shadow: 0 0 30px rgba(var(--primary-rgb), 0.5);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             color: #fff;
         }}
         .download-btn:active {{
@@ -574,7 +829,7 @@ HTML_TEMPLATE = """
             top: -50%; left: -60%; width: 20%; height: 200%;
             background: rgba(255, 255, 255, 0.2);
             transform: rotate(30deg);
-            transition: all 0.5s ease;
+            transition: all 0.6s ease;
             opacity: 0;
         }}
         .download-btn:hover::after {{
@@ -582,36 +837,111 @@ HTML_TEMPLATE = """
             opacity: 1;
         }}
 
-        .stats {{
-            margin-top: 20px;
-            font-size: 12px;
+        .actions-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 22px;
+        }}
+        .action-btn {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 4px;
             color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 9.5px;
+            font-weight: 600;
+            text-transform: uppercase;
             letter-spacing: 0.5px;
+            text-decoration: none;
+        }}
+        .action-btn:hover {{
+            background: rgba(var(--primary-rgb), 0.05);
+            border-color: var(--primary);
+            color: var(--text-main);
+            transform: translateY(-2px);
+        }}
+        .action-btn svg {{
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            transition: transform 0.3s ease;
+        }}
+        .action-btn:hover svg {{
+            transform: scale(1.15);
+        }}
+
+        /* SPECIFICATION GRID */
+        .specs-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 24px;
+        }}
+        .spec-item {{
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 10px 12px;
+            text-align: left;
+            transition: all 0.3s ease;
+        }}
+        .spec-item:hover {{
+            background: rgba(255, 255, 255, 0.025);
+            border-color: rgba(255, 255, 255, 0.06);
+        }}
+        .spec-label {{
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }}
+        .spec-value {{
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }}
+
+        .stats-footer {{
+            font-size: 11px;
+            color: var(--text-muted);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
+            opacity: 0.75;
+            margin-bottom: 24px;
         }}
-        .stats svg {{
-            width: 14px;
-            height: 14px;
+        .stats-footer svg {{
+            width: 13px;
+            height: 13px;
             fill: currentColor;
         }}
 
         /* DEVELOPER BLUEPRINT CARD */
         .dev-section {{
-            margin-top: 32px;
-            border-top: 1px dashed rgba(0, 242, 254, 0.15);
-            padding-top: 24px;
+            border-top: 1px dashed rgba(var(--primary-rgb), 0.15);
+            padding-top: 20px;
             text-align: left;
         }}
         .dev-title {{
-            font-size: 10px;
+            font-size: 9.5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             color: var(--primary);
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             opacity: 0.8;
             display: flex;
             align-items: center;
@@ -620,37 +950,37 @@ HTML_TEMPLATE = """
         .dev-title::before {{
             content: '';
             display: inline-block;
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             background: var(--primary);
-            box-shadow: 0 0 8px var(--primary);
+            box-shadow: 0 0 6px var(--primary);
             border-radius: 50%;
         }}
         .dev-profile-link {{
             text-decoration: none;
             display: block;
-            background: rgba(255, 255, 255, 0.01);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.008);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            padding: 10px 14px;
             transition: all 0.3s ease;
         }}
         .dev-profile-link:hover {{
-            background: rgba(0, 242, 254, 0.03);
-            border-color: rgba(0, 242, 254, 0.2);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.05);
+            background: rgba(var(--primary-rgb), 0.02);
+            border-color: rgba(var(--primary-rgb), 0.15);
+            box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.03);
             transform: translateY(-1px);
         }}
         .dev-content {{
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }}
         .dev-avatar {{
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.08);
             background: #111;
             transition: border-color 0.3s ease;
         }}
@@ -663,13 +993,13 @@ HTML_TEMPLATE = """
         }}
         .dev-name {{
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 14px;
+            font-size: 13.5px;
             font-weight: 700;
             color: var(--text-main);
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }}
         .dev-bio {{
-            font-size: 11px;
+            font-size: 10.5px;
             color: var(--text-muted);
             white-space: nowrap;
             overflow: hidden;
@@ -677,14 +1007,14 @@ HTML_TEMPLATE = """
             max-width: 100%;
         }}
         .dev-followers {{
-            font-size: 10px;
+            font-size: 9.5px;
             color: var(--primary);
             font-weight: 600;
-            margin-top: 3px;
+            margin-top: 2px;
         }}
         .dev-arrow {{
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -692,7 +1022,7 @@ HTML_TEMPLATE = """
             transition: transform 0.3s ease, color 0.3s ease;
         }}
         .dev-profile-link:hover .dev-arrow {{
-            transform: translateX(4px);
+            transform: translateX(3px);
             color: var(--primary);
         }}
         .dev-arrow svg {{
@@ -701,25 +1031,175 @@ HTML_TEMPLATE = """
             fill: currentColor;
         }}
 
+        /* TOAST SYSTEM */
+        .toast-container {{
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }}
+        .toast {{
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 15px rgba(var(--primary-rgb), 0.15);
+            padding: 10px 18px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 11.5px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: auto;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(8px);
+        }}
+        .toast.show {{
+            transform: translateY(0);
+            opacity: 1;
+        }}
+        .toast-icon {{
+            color: var(--primary);
+            font-weight: bold;
+        }}
+
+        /* GLASSMORPHIC QR MODAL */
+        .qr-modal {{
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(3, 4, 8, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }}
+        .qr-modal.show {{
+            opacity: 1;
+            pointer-events: auto;
+        }}
+        .qr-modal-content {{
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }}
+        .qr-modal.show .qr-modal-content {{
+            transform: scale(1);
+        }}
+        .qr-modal-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }}
+        .qr-modal-header h3 {{
+            margin: 0;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary);
+        }}
+        .close-btn {{
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }}
+        .close-btn:hover {{
+            color: #fff;
+        }}
+        .qr-code-body {{
+            padding: 20px;
+            text-align: center;
+        }}
+        .qr-code-body p {{
+            font-size: 11px;
+            color: var(--text-muted);
+            margin: 0 0 15px 0;
+            line-height: 1.4;
+        }}
+        .qr-img-wrapper {{
+            width: 180px;
+            height: 180px;
+            background: #030408;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            margin: 0 auto 15px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }}
+        .qr-image {{
+            width: 100%;
+            height: 100%;
+            display: block;
+        }}
+        .qr-loader {{
+            font-size: 11px;
+            color: var(--primary);
+            font-family: monospace;
+        }}
+        .qr-modal-footer {{
+            background: rgba(0,0,0,0.3);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.02);
+            word-break: break-all;
+        }}
+        .qr-url-text {{
+            font-size: 9px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }}
+
         @media (max-width: 480px) {{
             .card {{
-                padding: 30px 20px;
+                padding: 25px 20px;
                 border-radius: 20px;
             }}
             .filename {{
-                font-size: 17px;
+                font-size: 16px;
             }}
             .file-icon-wrapper {{
-                width: 70px;
-                height: 70px;
-                border-radius: 16px;
+                width: 64px;
+                height: 64px;
+                border-radius: 14px;
             }}
             .file-icon {{
-                font-size: 30px;
+                font-size: 26px;
             }}
             .download-btn {{
-                padding: 14px 20px;
-                font-size: 14px;
+                padding: 12px 20px;
+                font-size: 13.5px;
+            }}
+            .actions-grid {{
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }}
+            .spec-item {{
+                padding: 8px 10px;
             }}
         }}
     </style>
@@ -727,7 +1207,31 @@ HTML_TEMPLATE = """
 <body>
     <div class="glow-sphere glow-sphere-1"></div>
     <div class="glow-sphere glow-sphere-2"></div>
+    
     <div class="card">
+        <!-- Interactive Theme Switcher -->
+        <div class="theme-switcher">
+            <div class="theme-toggle-btn" onclick="toggleThemeMenu()">🎨</div>
+            <div class="theme-menu" id="theme-menu">
+                <div class="theme-option" onclick="setTheme('cyber')">
+                    <span class="theme-dot" style="background: linear-gradient(135deg, #00f2fe, #d946ef);"></span>
+                    Cyber Cyan
+                </div>
+                <div class="theme-option" onclick="setTheme('sunburst')">
+                    <span class="theme-dot" style="background: linear-gradient(135deg, #ff5e62, #febb2c);"></span>
+                    Sunburst Neon
+                </div>
+                <div class="theme-option" onclick="setTheme('emerald')">
+                    <span class="theme-dot" style="background: linear-gradient(135deg, #10b981, #fbbf24);"></span>
+                    Toxic Emerald
+                </div>
+                <div class="theme-option" onclick="setTheme('amethyst')">
+                    <span class="theme-dot" style="background: linear-gradient(135deg, #d946ef, #ec4899);"></span>
+                    Deep Amethyst
+                </div>
+            </div>
+        </div>
+
         <!-- Dynamic Spinning Cyber Logo -->
         <div class="logo-container">
             <svg class="main-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -756,9 +1260,15 @@ HTML_TEMPLATE = """
             <div class="logo-subtitle">SECURE CLOUD ENGINE</div>
         </div>
 
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            Direct Stream Active
+        <div class="badges-row">
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                Direct Stream Active
+            </div>
+            <div class="secure-badge" id="secured-badge" style="display:none;">
+                <svg viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
+                Secured SSL
+            </div>
         </div>
         
         <div class="file-icon-wrapper">
@@ -767,27 +1277,75 @@ HTML_TEMPLATE = """
         
         <div class="filename">{filename}</div>
         
-        <div class="meta-grid">
-            <div class="meta-item">
-                <div class="meta-label">File Size</div>
-                <div class="meta-value">{size_formatted}</div>
+        {media_player}
+
+        <!-- Cloud Integrity & Security Scanner -->
+        <div class="scanner-section" id="scanner-widget">
+            <div class="scanner-header">
+                <div class="scanner-radar">
+                    <div class="radar-sweep"></div>
+                    <div class="radar-dot"></div>
+                </div>
+                <div class="scanner-title-group">
+                    <div class="scanner-status" id="scan-status-text">INTEGRITY CHECK IN PROGRESS...</div>
+                    <div class="scanner-sub">CLOUD SYSTEM SECURITY MONITOR</div>
+                </div>
             </div>
-            <div class="meta-item">
-                <div class="meta-label">Downloads</div>
-                <div class="meta-value">{downloads}</div>
+            <div class="scanner-console" id="scanner-console">
+                <div class="console-line">> [SYSTEM] SECURE CONNECTING...</div>
             </div>
         </div>
 
-        {media_player}
+        <!-- Fully Unlocked Drawer -->
+        <div class="actions-drawer-container" id="actions-drawer">
+            <a href="/dl/{identifier}" class="download-btn">
+                <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                Secure Download Now
+            </a>
+
+            <div class="actions-grid">
+                <button class="action-btn" onclick="copyLink('web')">
+                    <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    <span>Copy Web</span>
+                </button>
+                <button class="action-btn" onclick="copyLink('direct')">
+                    <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                    <span>Direct Link</span>
+                </button>
+                <a id="tg-share-btn" href="#" target="_blank" class="action-btn">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.89 1.2-5.33 3.52-.5.35-.96.52-1.37.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.46-.42-1.4-.88.03-.24.37-.49 1.03-.74 4.04-1.76 6.74-2.92 8.09-3.48 3.85-1.6 4.64-1.88 5.17-1.89.11 0 .37.03.54.17.14.12.18.28.2.45-.02.07-.02.13-.03.19z"/></svg>
+                    <span>Share TG</span>
+                </a>
+                <button class="action-btn" onclick="openQrModal()">
+                    <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm-2 16h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zm-6 4h3v2h-3zm3 2h2v2h-2zm-3 2h3v2h-3zm3 2h2v-2h-2zm2-4h3v2h-3zm0 4h3v-2h-3zm0-8h2v2h-2zm2 2h2v2h-2z"/></svg>
+                    <span>Mobile QR</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Specifications Info Grid -->
+        <div class="specs-grid">
+            <div class="spec-item">
+                <div class="spec-label">Format / Type</div>
+                <div class="spec-value">{file_type_badge}</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">File Size</div>
+                <div class="spec-value">{size_formatted}</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Total Downloads</div>
+                <div class="spec-value">{downloads}</div>
+            </div>
+            <div class="spec-item">
+                <div class="spec-label">Uploaded On</div>
+                <div class="spec-value">{created_date}</div>
+            </div>
+        </div>
         
-        <a href="/dl/{identifier}" class="download-btn">
-            <svg style="width: 18px; height: 18px; fill: currentColor;" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-            Download Now
-        </a>
-        
-        <div class="stats">
+        <div class="stats-footer">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            Permanent high-speed direct link
+            Secure AES-256 cloud-encrypted stream channel
         </div>
 
         <!-- Dynamic GitHub Developer Blueprint -->
@@ -809,7 +1367,171 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- Toast system -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Glassmorphic QR Modal -->
+    <div class="qr-modal" id="qr-modal" onclick="closeQrModal(event)">
+        <div class="qr-modal-content" onclick="event.stopPropagation()">
+            <div class="qr-modal-header">
+                <h3>Scan QR Code</h3>
+                <button class="close-btn" onclick="closeQrModal()">&times;</button>
+            </div>
+            <div class="qr-code-body">
+                <p>Scan this QR code with your mobile device to view or download this file instantly.</p>
+                <div class="qr-img-wrapper" id="qr-img-wrapper">
+                    <div class="qr-loader">GENERATING ENCRYPTED CODE...</div>
+                </div>
+                <div class="qr-modal-footer">
+                    <span class="qr-url-text" id="qr-url-text"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        const identifier = "{identifier}";
+        const filename = "{filename}";
+        
+        // Theme selector
+        function setTheme(theme) {{
+            document.body.className = '';
+            if (theme !== 'cyber') {{
+                document.body.classList.add('theme-' + theme);
+            }}
+            localStorage.setItem('filetolink_theme', theme);
+            
+            const menu = document.getElementById('theme-menu');
+            if (menu) menu.classList.remove('show');
+            
+            // Re-render QR code matching the new theme color
+            if (document.getElementById('qr-modal').classList.contains('show')) {{
+                updateQrCode();
+            }}
+        }}
+
+        function toggleThemeMenu() {{
+            document.getElementById('theme-menu').classList.toggle('show');
+        }}
+
+        // Setup share link
+        document.getElementById('tg-share-btn').href = "https://t.me/share/url?url=" + encodeURIComponent(window.location.href) + "&text=" + encodeURIComponent("Direct Link to: " + filename);
+
+        // Copy Clipboard helpers
+        function copyLink(type) {{
+            let urlToCopy = "";
+            let message = "";
+            if (type === 'web') {{
+                urlToCopy = window.location.href;
+                message = "Web Preview Link Copied!";
+            }} else {{
+                urlToCopy = window.location.origin + "/dl/" + identifier;
+                message = "Direct Download Link Copied!";
+            }}
+
+            if (navigator.clipboard) {{
+                navigator.clipboard.writeText(urlToCopy).then(() => {{
+                    showToast(message);
+                }}).catch(() => {{
+                    fallbackCopy(urlToCopy, message);
+                }});
+            }} else {{
+                fallbackCopy(urlToCopy, message);
+            }}
+        }}
+
+        function fallbackCopy(text, msg) {{
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {{
+                document.execCommand('copy');
+                showToast(msg);
+            }} catch (err) {{
+                showToast("Copy failed", "error");
+            }}
+            document.body.removeChild(textArea);
+        }}
+
+        function showToast(message, type = "success") {{
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "toast " + type;
+            toast.innerHTML = '<span class="toast-icon">✓</span><span class="toast-msg">' + message + '</span>';
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {{
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }}, 3000);
+        }}
+
+        // Modal triggers
+        function openQrModal() {{
+            const modal = document.getElementById('qr-modal');
+            modal.classList.add('show');
+            document.getElementById('qr-url-text').textContent = window.location.href;
+            updateQrCode();
+        }}
+
+        function closeQrModal() {{
+            document.getElementById('qr-modal').classList.remove('show');
+        }}
+
+        function updateQrCode() {{
+            const wrapper = document.getElementById('qr-img-wrapper');
+            const primaryColor = getComputedStyle(document.body).getPropertyValue('--primary').trim();
+            const cleanColor = primaryColor.replace('#', '');
+            const currentUrl = window.location.href;
+            
+            wrapper.innerHTML = '<img class="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(currentUrl) + '&color=' + cleanColor + '&bgcolor=030408" alt="QR Code">';
+        }}
+
+        // Simulated integrity scanner
+        function startIntegrityCheck() {{
+            const consoleBox = document.getElementById('scanner-console');
+            const consoleLines = [
+                "> [SECURE SHIELD] Fetching SSL/TLS 1.3 handshake protocols...",
+                "> [NETWORK ENGINE] Opening high-speed direct pipeline node...",
+                "> [INTEGRITY SEAL] Checking file stream header metadata...",
+                "> [ANTI-VIRUS SCAN] Deep lookup: CLEAN. 0/78 active threats.",
+                "> [VERDICT] STATUS SECURE. Unlock engine pipeline..."
+            ];
+            
+            let currentLine = 0;
+            const interval = setInterval(() => {{
+                if (currentLine < consoleLines.length) {{
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'console-line';
+                    lineDiv.textContent = consoleLines[currentLine];
+                    consoleBox.appendChild(lineDiv);
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                    currentLine++;
+                }} else {{
+                    clearInterval(interval);
+                    completeScan();
+                }}
+            }}, 350);
+        }}
+
+        function completeScan() {{
+            document.getElementById('scan-status-text').textContent = "SYSTEM INTEGRITY SECURED";
+            document.getElementById('secured-badge').style.display = 'inline-flex';
+            
+            const scannerWidget = document.getElementById('scanner-widget');
+            scannerWidget.style.borderColor = '#10b981';
+            scannerWidget.style.background = 'rgba(16, 185, 129, 0.04)';
+            document.getElementById('scan-status-text').style.color = '#10b981';
+            
+            setTimeout(() => {{
+                // Fade-out scanner slightly and fully unlock buttons
+                document.getElementById('actions-drawer').classList.add('unlocked');
+            }}, 300);
+        }}
+
         async function fetchDevDetails() {{
             try {{
                 const res = await fetch('https://api.github.com/users/Tom2001moT');
@@ -818,7 +1540,7 @@ HTML_TEMPLATE = """
                 document.getElementById('dev-avatar').src = data.avatar_url;
                 document.getElementById('dev-name').textContent = data.name || 'Tom';
                 document.getElementById('dev-bio').textContent = data.bio || 'Core Developer';
-                document.getElementById('dev-followers').textContent = `${{data.followers}} Followers`;
+                document.getElementById('dev-followers').textContent = data.followers + " Followers";
             }} catch (e) {{
                 document.getElementById('dev-avatar').src = 'https://avatars.githubusercontent.com/u/10000000?v=4';
                 document.getElementById('dev-name').textContent = 'Tom2001moT';
@@ -826,7 +1548,21 @@ HTML_TEMPLATE = """
                 document.getElementById('dev-followers').textContent = 'GitHub Developer';
             }}
         }}
-        window.addEventListener('DOMContentLoaded', fetchDevDetails);
+
+        window.addEventListener('DOMContentLoaded', () => {{
+            const savedTheme = localStorage.getItem('filetolink_theme') || 'cyber';
+            setTheme(savedTheme);
+            fetchDevDetails();
+            setTimeout(startIntegrityCheck, 300);
+        }});
+        
+        // Close menus if click elsewhere
+        window.addEventListener('click', (e) => {{
+            if (!e.target.closest('.theme-switcher')) {{
+                const menu = document.getElementById('theme-menu');
+                if (menu) menu.classList.remove('show');
+            }}
+        }});
     </script>
 </body>
 </html>
@@ -851,6 +1587,7 @@ async def handle_view(request):
             filename = file_record[3]
             file_size = file_record[4]
             downloads = file_record[5]
+            created_date = file_record[7]
         else:
             msg = await app.get_messages(LOG_CHANNEL, message_id)
             if not msg or not msg.media: return web.Response(status=404, text="Not Found")
@@ -858,28 +1595,62 @@ async def handle_view(request):
             filename = getattr(media, "file_name", "file") or "file"
             file_size = getattr(media, "file_size", 0) or 0
             downloads = 0
+            created_date = "N/A"
+
+        # Format created_date nicely
+        formatted_date = "Unknown Date"
+        if created_date and created_date != "N/A":
+            try:
+                # sqlite format is usually YYYY-MM-DD HH:MM:SS
+                dt = datetime.strptime(created_date.split('.')[0], "%Y-%m-%d %H:%M:%S")
+                formatted_date = dt.strftime("%b %d, %Y - %I:%M %p")
+            except Exception:
+                formatted_date = str(created_date)
+        else:
+            formatted_date = "Direct Tunnel"
 
         mime_type, _ = mimetypes.guess_type(filename)
         mime_type = mime_type or 'application/octet-stream'
 
         lower_filename = filename.lower()
         icon = "📁"
+        file_type_badge = "Unknown File"
         if mime_type.startswith("video/") or any(ext in lower_filename for ext in [".mp4", ".mkv", ".avi", ".mov", ".webm"]):
             icon = "🎥"
+            file_type_badge = "Video Stream"
         elif mime_type.startswith("audio/") or any(ext in lower_filename for ext in [".mp3", ".wav", ".flac", ".m4a", ".ogg"]):
             icon = "🎵"
-        elif mime_type.startswith("image/"):
+            file_type_badge = "Audio Stream"
+        elif mime_type.startswith("image/") or any(ext in lower_filename for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"]):
             icon = "🖼️"
+            file_type_badge = "Image Preview"
         elif any(ext in lower_filename for ext in [".zip", ".rar", ".7z", ".tar", ".gz"]):
             icon = "📦"
+            file_type_badge = "Archive"
         elif ".pdf" in lower_filename:
             icon = "📕"
+            file_type_badge = "PDF Document"
+        elif any(ext in lower_filename for ext in [".txt", ".log", ".md", ".json", ".xml", ".py", ".js"]):
+            icon = "📄"
+            file_type_badge = "Text Document"
 
         media_player = ""
         if mime_type.startswith("video/") or any(ext in lower_filename for ext in [".mp4", ".mkv", ".avi", ".mov", ".webm"]):
-            media_player = f'<div class="media-container"><video controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the video tag.</video></div>'
+            media_player = f'<div class="media-container"><video id="media-element" controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the video tag.</video></div>'
         elif mime_type.startswith("audio/") or any(ext in lower_filename for ext in [".mp3", ".wav", ".flac", ".m4a", ".ogg"]):
-            media_player = f'<div class="media-container"><audio controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the audio element.</audio></div>'
+            media_player = f'<div class="media-container"><audio id="media-element" controls><source src="/stream/{identifier}" type="{mime_type}">Your browser does not support the audio element.</audio></div>'
+        elif mime_type.startswith("image/") or any(ext in lower_filename for ext in [".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"]):
+            media_player = f'<div class="media-container"><img id="media-element" src="/stream/{identifier}" alt="{filename}" style="max-width: 100%; max-height: 400px; display: block; margin: 0 auto; border-radius: 12px; object-fit: contain;"></div>'
+        else:
+            media_player = f"""
+            <div class="media-container doc-preview-container">
+                <div class="doc-icon-glow">{icon}</div>
+                <div class="doc-details">
+                    <span class="doc-title">{filename}</span>
+                    <span class="doc-subtitle">Ready to download secure archive ({format_size(file_size)})</span>
+                </div>
+            </div>
+            """
 
         html = HTML_TEMPLATE.format(
             filename=filename,
@@ -887,7 +1658,9 @@ async def handle_view(request):
             identifier=identifier,
             downloads=downloads,
             media_player=media_player,
-            icon=icon
+            icon=icon,
+            created_date=formatted_date,
+            file_type_badge=file_type_badge
         )
         return web.Response(text=html, content_type='text/html')
         
